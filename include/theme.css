@@ -1,0 +1,386 @@
+/* ==============================
+   Dark Theme Overrides
+   ============================== */
+
+body[data-theme="dark"] {
+    background: #0f172a !important;
+}
+
+/* --- Navbar --- */
+body[data-theme="dark"] nav,
+body[data-theme="dark"] header > nav {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+body[data-theme="dark"] header > nav a,
+body[data-theme="dark"] nav a {
+    color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] nav .text-teal-700,
+body[data-theme="dark"] header .text-teal-700 {
+    color: #2dd4bf !important;
+}
+
+/* --- Cards / Sections --- */
+body[data-theme="dark"] .bg-white,
+body[data-theme="dark"] .bg-white\/80,
+body[data-theme="dark"] .bg-white\/85,
+body[data-theme="dark"] .bg-white\/95 {
+    background: #1e293b !important;
+}
+
+body[data-theme="dark"] section.bg-gradient-to-r,
+body[data-theme="dark"] section > .bg-gradient-to-r {
+    background: #1e293b !important;
+}
+
+body[data-theme="dark"] .bg-gradient-to-br {
+    background: #0f172a !important;
+}
+
+body[data-theme="dark"] .bg-\[\#ecfeff\],
+body[data-theme="dark"] .bg-cyan-50 {
+    background-color: #1e293b !important;
+}
+
+body[data-theme="dark"] .bg-cyan-100,
+body[data-theme="dark"] .bg-cyan-50\/40 {
+    background-color: #1e293b !important;
+}
+
+body[data-theme="dark"] .bg-slate-100,
+body[data-theme="dark"] .bg-slate-200 {
+    background-color: #1e293b !important;
+}
+
+body[data-theme="dark"] .bg-red-50 {
+    background-color: #450a0a !important;
+    border-color: #7f1d1d !important;
+}
+
+body[data-theme="dark"] .bg-green-50 {
+    background-color: #052e16 !important;
+    border-color: #14532d !important;
+}
+
+/* --- Text Colors --- */
+body[data-theme="dark"] .text-slate-700,
+body[data-theme="dark"] .text-slate-800 {
+    color: #e2e8f0 !important;
+}
+
+body[data-theme="dark"] .text-slate-500,
+body[data-theme="dark"] .text-slate-600 {
+    color: #94a3b8 !important;
+}
+
+body[data-theme="dark"] .text-slate-400 {
+    color: #64748b !important;
+}
+
+body[data-theme="dark"] .text-teal-700 {
+    color: #2dd4bf !important;
+}
+
+body[data-theme="dark"] .text-teal-800 {
+    color: #5eead4 !important;
+}
+
+body[data-theme="dark"] .text-teal-600 {
+    color: #2dd4bf !important;
+}
+
+body[data-theme="dark"] .text-red-700 {
+    color: #fca5a5 !important;
+}
+
+body[data-theme="dark"] .text-green-700 {
+    color: #86efac !important;
+}
+
+body[data-theme="dark"] .text-cyan-100,
+body[data-theme="dark"] .text-cyan-50 {
+    color: #cffafe !important;
+}
+
+body[data-theme="dark"] .text-white {
+    color: #f1f5f9 !important;
+}
+
+/* --- Buttons --- */
+body[data-theme="dark"] .bg-gradient-to-r.from-cyan-400.to-teal-500 {
+    /* Keep gradient buttons as-is, they look good on dark */
+}
+
+body[data-theme="dark"] .bg-gradient-to-r.from-cyan-50.via-cyan-100.to-teal-100 {
+    background: linear-gradient(to right, #1e293b, #1e293b, #1e293b) !important;
+}
+
+body[data-theme="dark"] .bg-gradient-to-b.from-cyan-50.via-cyan-100.to-teal-100 {
+    background: linear-gradient(to bottom, #1e293b, #1e293b, #1e293b) !important;
+}
+
+/* --- Borders --- */
+body[data-theme="dark"] .border-cyan-100,
+body[data-theme="dark"] .border-cyan-200,
+body[data-theme="dark"] .border-cyan-300 {
+    border-color: #334155 !important;
+}
+
+body[data-theme="dark"] .border-slate-100,
+body[data-theme="dark"] .border-slate-200 {
+    border-color: #334155 !important;
+}
+
+body[data-theme="dark"] .border-white\/40,
+body[data-theme="dark"] .border-white\/50 {
+    border-color: #475569 !important;
+}
+
+body[data-theme="dark"] hr {
+    border-color: #334155 !important;
+}
+
+/* --- Inputs --- */
+body[data-theme="dark"] input,
+body[data-theme="dark"] textarea {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+body[data-theme="dark"] input:focus,
+body[data-theme="dark"] textarea:focus {
+    background-color: #0f172a !important;
+    border-color: #2dd4bf !important;
+    --tw-ring-color: rgba(45, 212, 191, 0.2) !important;
+}
+
+body[data-theme="dark"] input::placeholder,
+body[data-theme="dark"] textarea::placeholder {
+    color: #64748b !important;
+}
+
+/* --- Hover States --- */
+body[data-theme="dark"] .hover\:bg-cyan-50:hover {
+    background-color: #334155 !important;
+}
+
+body[data-theme="dark"] .hover\:bg-white\/70:hover {
+    background-color: #334155 !important;
+}
+
+body[data-theme="dark"] .hover\:bg-teal-50:hover {
+    background-color: #1e293b !important;
+}
+
+body[data-theme="dark"] .hover\:bg-slate-50:hover {
+    background-color: #334155 !important;
+}
+
+body[data-theme="dark"] .hover\:text-teal-600:hover,
+body[data-theme="dark"] .hover\:text-teal-700:hover {
+    color: #2dd4bf !important;
+}
+
+/* --- Shadows --- */
+body[data-theme="dark"] .shadow-sm,
+body[data-theme="dark"] .shadow-md,
+body[data-theme="dark"] .shadow-lg,
+body[data-theme="dark"] .shadow-xl,
+body[data-theme="dark"] .shadow-2xl {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* --- Dropdowns --- */
+body[data-theme="dark"] #langDropdown,
+body[data-theme="dark"] .absolute.right-0 {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+/* --- Mobile Menu --- */
+body[data-theme="dark"] #mobileMenu {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+/* --- Footer --- */
+body[data-theme="dark"] footer {
+    border-color: #334155 !important;
+}
+
+body[data-theme="dark"] footer .text-slate-700 {
+    color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] footer .text-teal-700 {
+    color: #2dd4bf !important;
+}
+
+/* --- Sidebar (Admin) --- */
+body[data-theme="dark"] aside {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+body[data-theme="dark"] aside .text-slate-700 {
+    color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] aside .text-slate-500 {
+    color: #94a3b8 !important;
+}
+
+body[data-theme="dark"] aside .text-teal-700 {
+    color: #2dd4bf !important;
+}
+
+body[data-theme="dark"] aside .hover\:bg-white\/70:hover {
+    background-color: #334155 !important;
+}
+
+body[data-theme="dark"] aside .border-cyan-200 {
+    border-color: #334155 !important;
+}
+
+body[data-theme="dark"] aside .text-teal-600 {
+    color: #2dd4bf !important;
+}
+
+/* --- Theme Toggle Button --- */
+body[data-theme="dark"] .theme-toggle {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #fbbf24 !important;
+}
+
+.theme-toggle {
+    color: #64748b !important;
+}
+
+/* --- Cards with backdrop-blur --- */
+body[data-theme="dark"] .backdrop-blur {
+    background: rgba(30, 41, 59, 0.8) !important;
+}
+
+body[data-theme="dark"] .backdrop-blur-xl {
+    background: rgba(30, 41, 59, 0.9) !important;
+}
+
+/* --- Hero overlays (keep dark overlays on images) --- */
+body[data-theme="dark"] .bg-gradient-to-r.from-black\/70,
+body[data-theme="dark"] .bg-gradient-to-r.from-black\/75,
+body[data-theme="dark"] .bg-gradient-to-r.from-slate-950\/80 {
+    /* Keep as-is, these are on top of images */
+}
+
+/* --- Trust badges --- */
+body[data-theme="dark"] .text-teal-700.font-black {
+    color: #2dd4bf !important;
+}
+
+/* --- Notification badge --- */
+body[data-theme="dark"] .bg-red-500 {
+    background-color: #dc2626 !important;
+}
+
+/* --- Bell icon button --- */
+body[data-theme="dark"] a[href="message.php"] > .flex.h-9.w-9,
+body[data-theme="dark"] .flex.h-9.w-9.items-center.justify-center.rounded-full.bg-white {
+    background: #0f172a !important;
+    color: #2dd4bf !important;
+}
+
+/* --- Language switcher button --- */
+body[data-theme="dark"] #langSwitcher button:first-child {
+    background: #0f172a !important;
+    color: #2dd4bf !important;
+    border-color: #334155 !important;
+}
+
+body[data-theme="dark"] .lang-option {
+    color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] .lang-option:hover {
+    background-color: #334155 !important;
+}
+
+body[data-theme="dark"] .lang-mobile {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+/* --- Post cards on feed --- */
+body[data-theme="dark"] article {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+body[data-theme="dark"] article .text-slate-800 {
+    color: #e2e8f0 !important;
+}
+
+body[data-theme="dark"] article .text-slate-600 {
+    color: #94a3b8 !important;
+}
+
+body[data-theme="dark"] article .text-slate-400 {
+    color: #64748b !important;
+}
+
+/* --- Sidebar widgets on feed --- */
+body[data-theme="dark"] .bg-white.rounded-2xl,
+body[data-theme="dark"] .rounded-2xl.border.border-cyan-100 {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+/* --- Profile page --- */
+body[data-theme="dark"] .rounded-2xl.border.border-cyan-100.p-6 {
+    background: #1e293b !important;
+}
+
+/* --- Messages page --- */
+body[data-theme="dark"] .bg-white.rounded-3xl {
+    background: #1e293b !important;
+}
+
+/* --- Job cards --- */
+body[data-theme="dark"] .rounded-2xl.border.border-slate-200 {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+/* --- Directory cards --- */
+body[data-theme="dark"] .rounded-2xl.border.border-cyan-100.shadow-sm {
+    background: #1e293b !important;
+}
+
+/* --- Modal / Share popup --- */
+body[data-theme="dark"] .fixed.inset-0 > .bg-white {
+    background: #1e293b !important;
+}
+
+/* --- Comment input on feed --- */
+body[data-theme="dark"] input[name="comment"] {
+    background: #0f172a !important;
+}
+
+/* --- Search bar --- */
+body[data-theme="dark"] input[name="search"] {
+    background: #0f172a !important;
+}
+
+/* --- Categories list --- */
+body[data-theme="dark"] .space-y-2 a {
+    color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] .space-y-2 a:hover {
+    background: #334155 !important;
+}
