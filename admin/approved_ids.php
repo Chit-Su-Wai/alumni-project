@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -6,7 +5,7 @@ if (
     !isset($_SESSION['user_id']) ||
     $_SESSION['role'] != 'admin'
 ) {
-     header("Location: ../alumni/login.php");
+    header("Location: ../alumni/login.php");
     exit;
 }
 
@@ -61,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 if (isset($_GET['delete'])) {
 
-    $approved_id = (int)$_GET['delete'];
+    $approved_id = (int) $_GET['delete'];
 
     $stmt = $conn->prepare("
     DELETE FROM approved_students
@@ -79,6 +78,17 @@ if (isset($_GET['delete'])) {
     exit;
 }
 
+/* Pagination */
+
+$limit = 6;
+
+$page = max(
+    1,
+    (int) ($_GET['page'] ?? 1)
+);
+
+$offset = ($page - 1) * $limit;
+
 /* Total */
 
 $totalStudents = $conn->query("
@@ -86,13 +96,26 @@ SELECT COUNT(*) total
 FROM approved_students
 ")->fetch_assoc()['total'];
 
+$totalPages = ceil($totalStudents / $limit);
+
 /* List */
 
-$students = $conn->query("
+$stmt = $conn->prepare("
 SELECT *
 FROM approved_students
 ORDER BY approved_id DESC
+LIMIT ?, ?
 ");
+
+$stmt->bind_param(
+    "ii",
+    $offset,
+    $limit
+);
+
+$stmt->execute();
+
+$students = $stmt->get_result();
 ?>
 
 
@@ -101,38 +124,46 @@ ORDER BY approved_id DESC
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta name="viewport"
-content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Approved Students</title>
+    <title>Approved Students</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
 </head>
 
 <body class="bg-slate-50">
-<div class="flex min-h-screen">
-    <?php include "../include/admin_header.php"; ?>
-    <div class="flex-1 p-6">
+    <div class="flex min-h-screen">
+        <?php include "../include/admin_header.php"; ?>
+        <div class="flex-1 p-6 flex flex-col min-h-screen">
 
-    <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center justify-between mb-6">
 
-        <h1 class="text-3xl font-bold text-teal-700">
-            Approved Students
-        </h1>
+                <h1 class="text-3xl font-bold text-teal-700">
+                    Approved Students
+                </h1>
 
-        
 
-    </div>
 
-    <!-- Total -->
+            </div>
 
-    <div class="bg-white rounded-3xl p-6 shadow mb-6">
+            <!-- Total -->
+            <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 rounded-xl shadow-sm p-3 mb-6 w-[300px]">
+
+                <p class="text-sm text-slate-500">
+                    Total Approved Students
+                </p>
+
+                <h2 class="text-2xl font-bold text-teal-700 mt-1">
+                    <?= $totalStudents ?>
+                </h2>
+
+            </div>
+            <!-- <div class="bg-white rounded-3xl p-6 shadow mb-6">
 
         <p class="text-slate-500">
             Total Approved Students
@@ -140,53 +171,84 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
         <h2 class="text-4xl font-black text-teal-700 mt-2">
 
-            <?= $totalStudents ?>
-
+           
         </h2>
 
-    </div>
+    </div> -->
 
-    <!-- Add Form -->
+            <!-- Add Form -->
+            <div class="bg-white rounded-xl shadow-sm p-3 mb-4 max-w-2xl">
 
-    <div class="bg-white rounded-3xl p-6 shadow mb-6">
+                <form method="POST" class="grid md:grid-cols-2 gap-2">
+
+                    <input type="number" name="approved_id" required placeholder="Approved ID"
+                        class="border rounded-lg px-3 py-2 text-sm">
+
+                    <input type="text" name="student_name" required placeholder="Student Name"
+                        class="border rounded-lg px-3 py-2 text-sm">
+
+                    <input type="text" name="roll_number" required placeholder="Roll Number"
+                        class="border rounded-lg px-3 py-2 text-sm">
+
+                    <input type="number" name="graduated_year" required placeholder="Graduated Year"
+                        class="border rounded-lg px-3 py-2 text-sm">
+
+                    <!-- <button
+            type="submit"
+            class="md:col-span-2 rounded-lg bg-gradient-to-r from-cyan-400 to-teal-500 px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+
+            Add Student
+
+        </button> -->
+                    <button type="submit" class="rounded-lg bg-gradient-to-r from-cyan-400 to-teal-500
+           px-3 py-1.5 text-xs font-medium text-white
+           w-fit hover:opacity-90">
+
+                        Add Student
+
+                    </button>
+                </form>
+
+            </div>
+            <!-- <div class="bg-white rounded-3xl p-5 shadow mb-6">
 
         <form method="POST"
-              class="grid md:grid-cols-2 gap-4">
+              class="grid md:grid-cols-2 gap-3">
 
             <input
                 type="number"
                 name="approved_id"
                 required
                 placeholder="Approved ID"
-                class="border rounded-xl px-4 py-3">
+                class="border rounded-xl px-3 py-2.5 text-sm">
 
             <input
                 type="text"
                 name="student_name"
                 required
                 placeholder="Student Name"
-                class="border rounded-xl px-4 py-3">
+                class="border rounded-xl px-3 py-2.5 text-sm">
 
             <input
                 type="text"
                 name="roll_number"
                 required
                 placeholder="Roll Number"
-                class="border rounded-xl px-4 py-3">
+                class="border rounded-xl px-3 py-2.5 text-sm">
 
             <input
                 type="number"
                 name="graduated_year"
                 required
                 placeholder="Graduated Year"
-                class="border rounded-xl px-4 py-3">
+                class="border rounded-xl px-3 py-2.5 text-sm">
 
             <button
                 type="submit"
                 class="md:col-span-2 rounded-xl
                 bg-gradient-to-r
                 from-cyan-400 to-teal-500
-                px-6 py-3 text-white font-bold">
+                px-4 py-2.5 text-sm font-semibold text-white">
 
                 Add Approved Student
 
@@ -194,75 +256,95 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
         </form>
 
-    </div>
+    </div> -->
 
-    <!-- Students List -->
+            <!-- Students List -->
 
-    <div class="space-y-4">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 flex-1 content-start">
 
-        <?php while($row = $students->fetch_assoc()): ?>
+                <?php while ($row = $students->fetch_assoc()): ?>
 
-        <div class="bg-white rounded-3xl p-5 shadow">
+                    <div class="bg-white rounded-xl border border-slate-100 p-4 shadow-sm min-h-[200px] flex flex-col">
 
-            <div class="flex flex-col lg:flex-row
-                        lg:items-center
-                        lg:justify-between
-                        gap-4">
+                        <div class="flex h-full flex-col justify-between gap-4">
 
-                <div>
+                            <div class="space-y-1">
 
-                    <h3 class="font-bold text-lg">
+                                <h3 class="text-base font-bold text-slate-800">
 
-                        <?= htmlspecialchars($row['student_name']) ?>
+                                    <?= htmlspecialchars($row['student_name']) ?>
 
-                    </h3>
+                                </h3>
 
-                    <p class="text-slate-500">
+                                <p class="text-sm text-slate-500">
 
-                        Approved ID :
-                        <?= $row['approved_id'] ?>
+                                    Approved ID :
+                                    <?= $row['approved_id'] ?>
 
-                    </p>
+                                </p>
 
-                    <p class="text-slate-500">
+                                <p class="text-sm text-slate-500">
 
-                        Roll No :
-                        <?= htmlspecialchars($row['roll_number']) ?>
+                                    Roll No :
+                                    <?= htmlspecialchars($row['roll_number']) ?>
 
-                    </p>
+                                </p>
 
-                    <p class="text-slate-500">
+                                <p class="text-sm text-slate-500">
 
-                        Graduated :
-                        <?= $row['graduated_year'] ?>
+                                    Graduated :
+                                    <?= $row['graduated_year'] ?>
 
-                    </p>
+                                </p>
 
-                </div>
+                            </div>
 
-                <a
-                href="?delete=<?= $row['approved_id'] ?>"
-                onclick="return confirm('Delete this student?')"
-                class="rounded-xl bg-red-500
-                px-4 py-2 text-white text-center">
+                            <div class="mt-auto">
 
-                    Delete
+                                <a href="?delete=<?= $row['approved_id'] ?>"
+                                    onclick="return confirm('Delete this student?')"
+                                    class="inline-block rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white">
 
-                </a>
+                                    Delete
+
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                <?php endwhile; ?>
 
             </div>
 
+            <!-- Pagination -->
+
+            <div class="mt-auto pt-7 pb-4">
+                <div class="flex justify-center gap-2">
+
+                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+
+                        <a href="?page=<?= $i ?>" class="px-4 py-2 rounded-xl
+               <?= $page == $i
+                   ? 'bg-cyan-500 text-white'
+                   : 'bg-white shadow' ?>">
+
+                            <?= $i ?>
+
+                        </a>
+
+                    <?php endfor; ?>
+
+                </div>
+            </div>
+
         </div>
-
-        <?php endwhile; ?>
-
     </div>
 
-</div>
-</div>
-
-<?php include "../include/admin_footer.php"; ?>
+    <?php include "../include/admin_footer.php"; ?>
 
 </body>
-</html>
 
+</html>

@@ -1,6 +1,10 @@
-
 <?php
 session_start();
+
+function e($value)
+{
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+}
 
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
@@ -8,62 +12,83 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 require_once "../config/db.php";
-if (
-    isset($_SESSION['role']) &&
-    $_SESSION['role'] == 'admin'
-) {
+
+if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
     header("Location: ../admin/dashboard.php");
     exit;
 }
-$current_user_id = (int) $_SESSION['user_id'];
 
+$current_user_id = (int) $_SESSION['user_id'];
+$search = trim($_GET['search'] ?? '');
 $position = $_GET['position'] ?? '';
 $job_type = $_GET['job_type'] ?? '';
 $location = $_GET['location'] ?? '';
 
 $sql = "
 SELECT
-    position,
-    user_id,
-    COUNT(*) as total_alumni
+    jobs.position,
+    jobs.job_type,
+    jobs.location,
+    jobs.company,
+    users.id,
+    users.name,
+    users.email,
+    users.profile_image
 FROM jobs
-WHERE user_id != ?
+INNER JOIN users ON jobs.user_id = users.id
+WHERE jobs.user_id != ?
+AND users.role = 'user'
 ";
 
 $params = [$current_user_id];
 $types = "i";
 
-if ($position != '') {
-    $sql .= " AND position = ? ";
+if ($position !== '') {
+    $sql .= " AND jobs.position = ? ";
     $params[] = $position;
     $types .= "s";
 }
 
-if ($job_type != '') {
-    $sql .= " AND job_type = ? ";
+if ($job_type !== '') {
+    $sql .= " AND jobs.job_type = ? ";
     $params[] = $job_type;
     $types .= "s";
 }
 
-if ($location != '') {
-    $sql .= " AND location = ? ";
+if ($location !== '') {
+    $sql .= " AND jobs.location = ? ";
     $params[] = $location;
     $types .= "s";
 }
 
-$sql .= "
-GROUP BY position, user_id
-ORDER BY total_alumni DESC
-";
+if ($search !== '') {
+    $sql .= "
+    AND (
+        jobs.position LIKE ?
+        OR users.name LIKE ?
+        OR users.email LIKE ?
+        OR jobs.company LIKE ?
+        OR jobs.location LIKE ?
+    )
+    ";
+    $keyword = "%{$search}%";
+    array_push($params, $keyword, $keyword, $keyword, $keyword, $keyword);
+    $types .= "sssss";
+}
+
+$sql .= " ORDER BY jobs.position ASC, users.name ASC ";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param($types, ...$params);
 $stmt->execute();
 
 $result = $stmt->get_result();
-$jobs = $result->fetch_all(MYSQLI_ASSOC);
-?>
+$jobGroups = [];
 
+while ($row = $result->fetch_assoc()) {
+    $jobGroups[$row['position']][] = $row;
+}
+?>
 
 <!DOCTYPE html>
 <html>
@@ -81,20 +106,27 @@ $jobs = $result->fetch_all(MYSQLI_ASSOC);
 
     <?php include "../include/user_header.php"; ?>
 
-    <div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="max-w-7xl mx-auto px-4 py-6 flex-1 flex flex-col min-h-screen">
 
-        <!-- FILTER -->
         <div class="bg-white rounded-3xl p-5 shadow-sm mb-6">
-            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+
+                <input
+                    type="text"
+                    name="search"
+                    value="<?= e($search) ?>"
+                    placeholder="Search alumni, company, or title"
+                    class="rounded-xl border px-4 py-3"
+                >
 
                 <select name="position" class="rounded-xl border px-4 py-3">
                     <option value="">All Job Titles</option>
                     <?php
                     $q = mysqli_query($conn, "SELECT DISTINCT position FROM jobs ORDER BY position");
                     while ($row = mysqli_fetch_assoc($q)):
-                        ?>
-                        <option value="<?= htmlspecialchars($row['position']) ?>" <?= ($position == $row['position']) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($row['position']) ?>
+                    ?>
+                        <option value="<?= e($row['position']) ?>" <?= $position == $row['position'] ? 'selected' : '' ?>>
+                            <?= e($row['position']) ?>
                         </option>
                     <?php endwhile; ?>
                 </select>
@@ -102,11 +134,11 @@ $jobs = $result->fetch_all(MYSQLI_ASSOC);
                 <select name="job_type" class="rounded-xl border px-4 py-3">
                     <option value="">All Job Types</option>
                     <?php
-                    $q = mysqli_query($conn, "SELECT DISTINCT job_type FROM jobs WHERE job_type != ''");
+                    $q = mysqli_query($conn, "SELECT DISTINCT job_type FROM jobs WHERE job_type != '' ORDER BY job_type");
                     while ($row = mysqli_fetch_assoc($q)):
-                        ?>
-                        <option value="<?= htmlspecialchars($row['job_type']) ?>" <?= ($job_type == $row['job_type']) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($row['job_type']) ?>
+                    ?>
+                        <option value="<?= e($row['job_type']) ?>" <?= $job_type == $row['job_type'] ? 'selected' : '' ?>>
+                            <?= e($row['job_type']) ?>
                         </option>
                     <?php endwhile; ?>
                 </select>
@@ -116,9 +148,9 @@ $jobs = $result->fetch_all(MYSQLI_ASSOC);
                     <?php
                     $q = mysqli_query($conn, "SELECT DISTINCT location FROM jobs ORDER BY location");
                     while ($row = mysqli_fetch_assoc($q)):
-                        ?>
-                        <option value="<?= htmlspecialchars($row['location']) ?>" <?= ($location == $row['location']) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($row['location']) ?>
+                    ?>
+                        <option value="<?= e($row['location']) ?>" <?= $location == $row['location'] ? 'selected' : '' ?>>
+                            <?= e($row['location']) ?>
                         </option>
                     <?php endwhile; ?>
                 </select>
@@ -128,86 +160,92 @@ $jobs = $result->fetch_all(MYSQLI_ASSOC);
                         Search
                     </button>
 
-                     <button type="submit" class="w-full bg-cyan-500 text-white rounded-xl font-bold">
+                    <a href="job.php" class="w-full bg-slate-200 text-slate-700 rounded-xl font-bold flex items-center justify-center">
                         Clear
-                    </button>
+                    </a>
                 </div>
 
             </form>
         </div>
 
-        <!-- JOB LIST -->
         <div class="space-y-4">
 
-            <?php if (empty($jobs)): ?>
+            <?php if (empty($jobGroups)): ?>
                 <div class="bg-white p-6 rounded-xl text-center shadow">
                     No jobs found
                 </div>
             <?php endif; ?>
 
-            <?php foreach ($jobs as $job):
-                $positionId = preg_replace('/[^a-zA-Z0-9]/', '-', $job['position']);
-                ?>
-
+            <?php foreach ($jobGroups as $jobTitle => $alumni): ?>
                 <div class="bg-white rounded-3xl p-6 shadow-sm border">
 
-                    <div class="flex items-center justify-between">
-
-                        <div class="flex items-center gap-4">
-
-                            <div class="h-12 w-12 rounded-xl bg-cyan-100 flex items-center justify-center">
-                                <i class="fa-solid fa-briefcase text-cyan-600"></i>
-                            </div>
-
-                            <div>
-
-                                <h3 class="font-bold text-lg">
-                                    <?= htmlspecialchars($job['position']) ?>
-                                </h3>
-
-                                <p class="text-sm text-slate-500">
-                                    <?= $job['total_alumni'] ?> Alumni
-                                </p>
-
-                            
-                                
-
-                            </div>
-
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 rounded-xl bg-cyan-100 flex items-center justify-center">
+                            <i class="fa-solid fa-briefcase text-cyan-600"></i>
                         </div>
 
-                        <button onclick="toggleAlumni('<?= $positionId ?>', '<?= htmlspecialchars($job['position']) ?>')">
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </button>
+                        <div>
+                            <h3 class="font-bold text-lg">
+                                <?= e($jobTitle) ?>
+                            </h3>
 
+                            <p class="text-sm text-slate-500">
+                                <?= count($alumni) ?> Alumni
+                            </p>
+                        </div>
                     </div>
 
-                    <div id="alumni-<?= $positionId ?>" class="hidden mt-5 border-t pt-5"></div>
+                    <div class="mt-5 border-t pt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        <?php foreach ($alumni as $person): ?>
+                            <?php $image = !empty($person['profile_image']) ? $person['profile_image'] : '../images/default-avatar.svg'; ?>
+
+                            <div class="rounded-2xl border p-4 hover:bg-slate-50 transition">
+                                <div class="flex items-center gap-4">
+                                    <img
+                                        src="<?= e($image) ?>"
+                                        alt="<?= e($person['name']) ?>"
+                                        class="h-14 w-14 rounded-full object-cover border"
+                                    >
+
+                                    <div class="min-w-0 flex-1">
+                                        <h4 class="font-bold text-slate-800 truncate">
+                                            <?= e($person['name']) ?>
+                                        </h4>
+
+                                        <p class="text-sm text-slate-500 truncate">
+                                            <?= e($person['email']) ?>
+                                        </p>
+
+                                        <p class="text-sm text-slate-600 truncate">
+                                            <?= e($person['company']) ?>
+                                        </p>
+
+                                        <p class="text-xs text-slate-400 truncate">
+                                            <?= e($person['location']) ?>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 flex items-center justify-between gap-2">
+                                    <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700">
+                                        <?= e($person['job_type'] ?: 'Job') ?>
+                                    </span>
+
+                                    <a href="user_profile.php?id=<?= (int) $person['id'] ?>"
+                                       class="rounded-xl bg-cyan-500 px-4 py-2 text-white text-sm font-semibold hover:bg-cyan-600">
+                                        View Profile
+                                    </a>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
 
                 </div>
-
             <?php endforeach; ?>
 
         </div>
 
     </div>
-
-    <script>
-        function toggleAlumni(id, position) {
-            let box = document.getElementById('alumni-' + id);
-
-            if (box.classList.contains('hidden')) {
-                fetch('load_alumni.php?position=' + encodeURIComponent(position))
-                    .then(res => res.text())
-                    .then(data => {
-                        box.innerHTML = data;
-                        box.classList.remove('hidden');
-                    });
-            } else {
-                box.classList.add('hidden');
-            }
-        }
-    </script>
 
 <?php include "../include/footer.php"; ?>
 

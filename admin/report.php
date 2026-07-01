@@ -117,7 +117,7 @@ content="width=device-width, initial-scale=1">
 
 <script src="https://cdn.tailwindcss.com"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 
 <style>
 
@@ -158,32 +158,32 @@ content="width=device-width, initial-scale=1">
 
     <!-- Cards -->
 
-    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
 
-        <div class="bg-white p-6 rounded-3xl shadow">
-            <p class="text-slate-500">Total Alumni</p>
-            <h2 class="text-4xl font-black text-teal-700">
+        <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 p-4 rounded-2xl shadow">
+            <p class="text-sm text-slate-500">Total Alumni</p>
+            <h2 class="text-3xl font-black text-teal-700 mt-1.5">
                 <?= $totalAlumni ?>
             </h2>
         </div>
 
-        <div class="bg-white p-6 rounded-3xl shadow">
-            <p class="text-slate-500">Total Jobs</p>
-            <h2 class="text-4xl font-black text-teal-700">
+        <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 p-4 rounded-2xl shadow">
+            <p class="text-sm text-slate-500">Total Jobs</p>
+            <h2 class="text-3xl font-black text-teal-700 mt-1.5">
                 <?= $totalJobs ?>
             </h2>
         </div>
 
-        <div class="bg-white p-6 rounded-3xl shadow">
-            <p class="text-slate-500">Total Posts</p>
-            <h2 class="text-4xl font-black text-teal-700">
+        <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 p-4 rounded-2xl shadow">
+            <p class="text-sm text-slate-500">Total Posts</p>
+            <h2 class="text-3xl font-black text-teal-700 mt-1.5">
                 <?= $totalPosts ?>
             </h2>
         </div>
 
-        <div class="bg-white p-6 rounded-3xl shadow">
-            <p class="text-slate-500">Total Messages</p>
-            <h2 class="text-4xl font-black text-teal-700">
+        <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 p-4 rounded-2xl shadow">
+            <p class="text-sm text-slate-500">Total Messages</p>
+            <h2 class="text-3xl font-black text-teal-700 mt-1.5">
                 <?= $totalMessages ?>
             </h2>
         </div>
@@ -202,7 +202,9 @@ content="width=device-width, initial-scale=1">
                 Alumni By Graduation Year
             </h2>
 
-            <canvas id="alumniChart"></canvas>
+            <div style="position:relative;height:220px;">
+                <canvas id="alumniChart"></canvas>
+            </div>
 
         </div>
 
@@ -214,7 +216,9 @@ content="width=device-width, initial-scale=1">
                 Jobs By Type
             </h2>
 
-            <canvas id="jobChart"></canvas>
+            <div style="position:relative;height:220px;">
+                <canvas id="jobChart"></canvas>
+            </div>
 
         </div>
 
@@ -226,7 +230,9 @@ content="width=device-width, initial-scale=1">
                 Posts By Month
             </h2>
 
-            <canvas id="postChart"></canvas>
+            <div style="position:relative;height:220px;">
+                <canvas id="postChart"></canvas>
+            </div>
 
         </div>
 
@@ -238,7 +244,9 @@ content="width=device-width, initial-scale=1">
                 Messages Status
             </h2>
 
-            <canvas id="messageChart"></canvas>
+            <div style="position:relative;height:220px;">
+                <canvas id="messageChart"></canvas>
+            </div>
 
         </div>
 
@@ -250,116 +258,112 @@ content="width=device-width, initial-scale=1">
 <?php include "../include/admin_footer.php"; ?>
 
 <script>
-/* Alumni By Graduation Year Chart */
-new Chart(document.getElementById('alumniChart'), {
-    type: 'bar',
-    data: {
-        labels: [
-            <?php
-            foreach($alumniData as $a) {
-                echo "'" . $a['graduated_year'] . "',";
-            }
-            ?>
-        ],
-        datasets: [{
-            label: 'Alumni',
-            data: [
-                <?php
-                foreach($alumniData as $a) {
-                    echo $a['total'] . ",";
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof Chart === 'undefined') {
+        return;
+    }
+
+    var alumniChart = document.getElementById('alumniChart');
+    var jobChart = document.getElementById('jobChart');
+    var postChart = document.getElementById('postChart');
+    var messageChart = document.getElementById('messageChart');
+
+    if (alumniChart) {
+        new Chart(alumniChart, {
+            type: 'bar',
+            data: {
+                labels: <?= json_encode(array_column($alumniData, 'graduated_year')) ?>,
+                datasets: [{
+                    label: 'Alumni',
+                    data: <?= json_encode(array_map('intval', array_column($alumniData, 'total'))) ?>,
+                    backgroundColor: '#06b6d4',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
                 }
-                ?>
-            ],
-            backgroundColor: '#06b6d4',
-            borderRadius: 8
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { display: false }
-        },
-        scales: {
-            y: { beginAtZero: true, ticks: { stepSize: 1 } }
-        }
-    }
-});
-
-/* Jobs By Type Chart */
-new Chart(document.getElementById('jobChart'), {
-    type: 'doughnut',
-    data: {
-        labels: ['Full Time', 'Part Time'],
-        datasets: [{
-            data: [<?= $fullTime ?>, <?= $partTime ?>],
-            backgroundColor: ['#06b6d4', '#14b8a6'],
-            borderWidth: 0
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { position: 'bottom' }
-        }
-    }
-});
-
-/* Posts By Month Chart */
-new Chart(document.getElementById('postChart'), {
-    type: 'bar',
-    data: {
-        labels: [
-            <?php
-            $monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-            foreach($postData as $p) {
-                echo "'" . $monthNames[$p['month'] - 1] . "',";
             }
-            ?>
-        ],
-        datasets: [{
-            label: 'Posts',
-            data: [
-                <?php
-                foreach($postData as $p) {
-                    echo $p['total'] . ",";
-                }
-                ?>
-            ],
-            backgroundColor: '#14b8a6',
-            borderRadius: 8
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { display: false }
-        },
-        scales: {
-            y: { beginAtZero: true, ticks: { stepSize: 1 } }
-        }
+        });
     }
-});
 
-/* Messages Status Chart */
-new Chart(document.getElementById('messageChart'), {
-    type: 'doughnut',
-    data: {
-        labels: ['Read', 'Unread'],
-        datasets: [{
-            data: [<?= $readMsg ?>, <?= $unreadMsg ?>],
-            backgroundColor: ['#10b981', '#ef4444'],
-            borderWidth: 0
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { position: 'bottom' }
-        }
+    if (jobChart) {
+        new Chart(jobChart, {
+            type: 'doughnut',
+            data: {
+                labels: ['Full Time', 'Part Time'],
+                datasets: [{
+                    data: [<?= (int)$fullTime ?>, <?= (int)$partTime ?>],
+                    backgroundColor: ['#06b6d4', '#14b8a6'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    if (postChart) {
+        new Chart(postChart, {
+            type: 'bar',
+            data: {
+                labels: <?= json_encode(array_map(function ($post) {
+                    $monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    return $monthNames[(int)$post['month'] - 1] ?? '';
+                }, $postData)) ?>,
+                datasets: [{
+                    label: 'Posts',
+                    data: <?= json_encode(array_map('intval', array_column($postData, 'total'))) ?>,
+                    backgroundColor: '#14b8a6',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+    }
+
+    if (messageChart) {
+        new Chart(messageChart, {
+            type: 'doughnut',
+            data: {
+                labels: ['Read', 'Unread'],
+                datasets: [{
+                    data: [<?= (int)$readMsg ?>, <?= (int)$unreadMsg ?>],
+                    backgroundColor: ['#10b981', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
     }
 });
 </script>
 
 </body>
 </html>
-

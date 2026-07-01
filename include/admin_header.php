@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
 /* 
   Since the parent dashboard wraps this in <div class="flex min-h-screen">
@@ -12,7 +13,7 @@
 </style>
 
 <!-- Mobile Header (Hidden on Desktop) -->
-<div class="flex md:hidden items-center justify-between bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 border-b border-cyan-200 p-4 w-full">
+<div class="flex md:hidden items-center justify-between bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 border-b border-cyan-200 p-4 w-full sticky top-0 z-10">
     <div class="flex items-center gap-3">
         <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 to-teal-500 font-black text-white">
             AN
@@ -34,7 +35,17 @@
 </div>
 
 <!-- Sidebar -->
-<aside id="adminSidebar" class="max-h-0 md:max-h-none overflow-hidden md:overflow-visible transition-[max-height] duration-300 ease-in-out w-full md:w-64 bg-gradient-to-b from-cyan-50 via-cyan-100 to-teal-100 md:border-r border-b md:border-b-0 border-cyan-200 text-slate-800">
+<aside id="adminSidebar"
+class="max-h-0 md:max-h-none
+overflow-hidden md:overflow-visible
+transition-[max-height] duration-300 ease-in-out
+w-full md:w-64
+bg-gradient-to-b from-cyan-50 via-cyan-100 to-teal-100
+md:border-r border-b md:border-b-0 border-cyan-200
+text-slate-800
+md:sticky md:top-0
+md:h-screen
+md:flex md:flex-col">
     <div class="hidden md:flex p-6 border-b border-cyan-200 items-center justify-between">
         <a href="dashboard.php" class="flex items-center gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 to-teal-500 font-black text-white">
@@ -50,8 +61,58 @@
             <i class="fa-solid fa-moon text-sm"></i>
         </button>
     </div>
-    <nav class="p-4 space-y-1">
+
+    <nav class="flex flex-col flex-1 p-4">
+    <div class="space-y-1">
+
         <a href="dashboard.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
+            <i class="fa-solid fa-gauge-high w-5 text-center text-teal-600"></i>
+            <span data-t="dashboard">Dashboard</span>
+        </a>
+
+        <a href="users.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
+            <i class="fa-solid fa-users w-5 text-center text-teal-600"></i>
+            <span data-t="alumni">Alumni</span>
+        </a>
+
+        <a href="posts.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
+            <i class="fa-regular fa-newspaper w-5 text-center text-teal-600"></i>
+            <span data-t="posts">Posts</span>
+        </a>
+
+        <a href="jobs.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
+            <i class="fa-solid fa-briefcase w-5 text-center text-teal-600"></i>
+            <span data-t="jobs">Jobs</span>
+        </a>
+
+        <a href="contacts.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
+            <i class="fa-regular fa-envelope w-5 text-center text-teal-600"></i>
+            <span data-t="contacts">Contacts</span>
+        </a>
+
+        <a href="approved_ids.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
+            <i class="fa-solid fa-id-card w-5 text-center text-teal-600"></i>
+            <span data-t="approved_ids">Approved IDs</span>
+        </a>
+
+        <a href="report.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
+            <i class="fa-solid fa-chart-bar w-5 text-center text-teal-600"></i>
+            <span data-t="reports">Reports</span>
+        </a>
+
+    </div>
+
+    <!-- Logout Bottom -->
+    <div class="mt-auto pt-4 border-t border-cyan-200">
+        <a href="logout.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-red-600 transition">
+            <i class="fa-solid fa-right-from-bracket w-5 text-center text-red-500"></i>
+            <span data-t="logout">Logout</span>
+        </a>
+    </div>
+</nav>
+    <!-- <nav class="p-4 space-y-1 md:flex-1 md:flex md:flex-col">
+        <div class="flex-1">
+            <a href="dashboard.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
             <i class="fa-solid fa-gauge-high w-5 text-center text-teal-600"></i>
             <span data-t="dashboard">Dashboard</span>
         </a>
@@ -79,14 +140,15 @@
             <i class="fa-solid fa-chart-bar w-5 text-center text-teal-600"></i>
             <span data-t="reports">Reports</span>
         </a>
+        </div>
 
-        <div class="pt-4 mt-4 border-t border-cyan-200">
+        <div class="pt-4 mt-4 border-t border-cyan-200 md:mt-auto">
             <a href="logout.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-red-600 transition">
                 <i class="fa-solid fa-right-from-bracket w-5 text-center text-red-500"></i>
                 <span data-t="logout">Logout</span>
             </a>
         </div>
-    </nav>
+    </nav> -->
 </aside>
 
 <script>

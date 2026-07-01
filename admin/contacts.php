@@ -31,7 +31,7 @@ if (isset($_GET['delete'])) {
 
 /* Pagination */
 
-$limit = 10;
+$limit = 5;
 
 $page = max(
     1,
@@ -111,42 +111,52 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
         <!-- Total Messages -->
 
-        <div class="bg-white rounded-3xl p-6 shadow mb-6">
+        <!-- <div class="bg-white rounded-2xl p-3 shadow mb-6">
 
-            <p class="text-slate-500">
+            <p class="text-sm text-slate-500">
                 Total Messages
             </p>
 
-            <h2 class="text-4xl font-black text-teal-700 mt-2">
+            <h2 class="text-2xl font-black text-teal-700 mt-1">
 
-                <?= $totalMessages ?>
+               
 
             </h2>
 
-        </div>
+        </div> -->
+        <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 rounded-xl shadow-sm p-3 mb-6 w-[300px]">
+
+                <p class="text-sm text-slate-500">
+                    Total Messages
+                </p>
+
+                <h2 class="text-2xl font-bold text-teal-700 mt-1">
+                    <?= $totalMessages ?>
+                </h2>
+
+            </div>
 
         <!-- Messages -->
 
-        <div class="space-y-5">
+        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
 
             <?php while ($msg = $messages->fetch_assoc()): ?>
 
-            <div class="bg-white rounded-3xl p-6 shadow">
+            <div class="bg-white rounded-2xl p-4 shadow">
 
-                <div class="flex flex-col lg:flex-row
-                            lg:items-center
-                            lg:justify-between
-                            gap-4">
+                <div class="flex items-start gap-3">
 
-                    <div>
+                    <img src="../images/default-avatar.svg" class="h-10 w-10 rounded-full object-cover border border-cyan-100 shrink-0">
 
-                        <h2 class="text-xl font-bold">
+                    <div class="min-w-0 flex-1">
+
+                        <h2 class="font-semibold text-slate-800 truncate">
 
                             <?= htmlspecialchars($msg['name']) ?>
 
                         </h2>
 
-                        <p class="text-slate-500">
+                        <p class="text-sm text-slate-500 truncate">
 
                             <?= htmlspecialchars($msg['email']) ?>
 
@@ -154,77 +164,90 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
                     </div>
 
-                    <div class="flex flex-wrap gap-2">
+                </div>
 
-                        <span class="rounded-full
+                <div class="mt-4 flex flex-wrap gap-2">
+
+                    <span class="rounded-full
                         bg-cyan-100
                         text-cyan-700
-                        px-4 py-2
-                        text-sm font-semibold">
+                        px-3 py-1.5
+                        text-xs font-semibold">
 
-                            <?= htmlspecialchars($msg['subject']) ?>
+                        <?= htmlspecialchars($msg['subject']) ?>
 
-                        </span>
+                    </span>
 
-                        <?php if($msg['is_read'] == 0): ?>
+                    <?php if($msg['is_read'] == 0): ?>
 
-                        <span class="bg-red-100
+                    <span class="bg-red-100
                         text-red-600
-                        px-3 py-2
+                        px-3 py-1.5
                         rounded-full
                         text-xs font-bold">
 
-                            Unread
+                        Unread
 
-                        </span>
+                    </span>
 
-                        <?php else: ?>
+                    <?php else: ?>
 
-                        <span class="bg-green-100
+                    <span class="bg-green-100
                         text-green-600
-                        px-3 py-2
+                        px-3 py-1.5
                         rounded-full
                         text-xs font-bold">
 
-                            Read
+                        Read
 
-                        </span>
+                    </span>
 
-                        <?php endif; ?>
+                    <?php endif; ?>
 
+                </div>
+
+                <div class="mt-4 space-y-3 text-sm">
+
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Message
+                        </p>
+
+                        <p class="mt-1 text-slate-700 leading-6">
+
+                            <?= htmlspecialchars(
+                                substr($msg['message'], 0, 120)
+                            ) ?>
+
+                            ...
+
+                        </p>
+
+                    </div>
+
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Date
+                        </p>
+                        <p class="mt-1 text-slate-500">
+
+                            <?= date(
+                                "M d, Y h:i A",
+                                strtotime($msg['created_at'])
+                            ) ?>
+
+                        </p>
                     </div>
 
                 </div>
 
-                <div class="mt-4">
-
-                    <p class="text-slate-700">
-
-                        <?= htmlspecialchars(
-                            substr($msg['message'], 0, 120)
-                        ) ?>
-
-                        ...
-
-                    </p>
-
-                </div>
-
-                <div class="mt-4 text-sm text-slate-500">
-
-                    <?= date(
-                        "M d, Y h:i A",
-                        strtotime($msg['created_at'])
-                    ) ?>
-
-                </div>
-
-                <div class="mt-6 flex flex-wrap gap-3">
+                <div class="mt-4 flex flex-wrap gap-2">
 
                     <a href="view_contact.php?id=<?= $msg['id'] ?>"
                        class="rounded-xl
                        bg-blue-500
-                       px-4 py-2
+                       px-3 py-2
+                       text-sm
                        text-white">
 
                         View
@@ -235,7 +258,8 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
                        onclick="return confirm('Delete this message?')"
                        class="rounded-xl
                        bg-red-500
-                       px-4 py-2
+                       px-3 py-2
+                       text-sm
                        text-white">
 
                         Delete
@@ -278,4 +302,3 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
 </body>
 </html>
-

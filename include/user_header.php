@@ -82,7 +82,7 @@ if ($currentUserId) {
 
             <a href="feed.php" class="rounded-full px-3 py-2 text-sm font-bold text-teal-700 hover:bg-white/70">
                 <i class="fa-regular fa-newspaper mr-1"></i>
-                <span data-t="feed">Post</span>
+                <span data-t="feed">Posts</span>
             </a>
 
             <a href="job.php" class="rounded-full px-3 py-2 text-sm font-bold text-teal-700 hover:bg-white/70">
@@ -134,41 +134,7 @@ if ($currentUserId) {
 
             </div>
 
-            <!-- Language Switcher -->
 
-            <div class="relative" id="langSwitcher">
-
-                <button onclick="document.getElementById('langDropdown').classList.toggle('hidden')"
-                    class="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-teal-700 shadow-sm hover:bg-teal-50 transition">
-
-                    <i class="fa-solid fa-globe"></i>
-                    <span id="currentLangLabel">EN</span>
-                    <i class="fa-solid fa-chevron-down text-[10px]"></i>
-
-                </button>
-
-                <div id="langDropdown"
-                    class="hidden absolute right-0 mt-2 w-40 rounded-2xl border border-cyan-100 bg-white py-2 shadow-xl z-50">
-
-                    <button onclick="switchLang('en')"
-                        class="lang-option block w-full text-left px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-cyan-50 transition"
-                        data-lang="en">
-
-                        &#127468;&#127463; EN
-
-                    </button>
-
-                    <button onclick="switchLang('my')"
-                        class="lang-option block w-full text-left px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-cyan-50 transition"
-                        data-lang="my">
-
-                        &#127478;&#127482; MM
-
-                    </button>
-
-                </div>
-
-            </div>
 
             <!-- Theme Toggle -->
 
@@ -215,7 +181,7 @@ if ($currentUserId) {
         class="mx-auto mt-3 hidden max-w-7xl rounded-3xl border border-cyan-100 bg-white p-3 shadow-xl lg:hidden">
 
         <a href="feed.php" class="block rounded-xl px-4 py-2.5 font-semibold text-slate-700 hover:bg-cyan-50">
-            <span data-t="feed">Post</span>
+            <span data-t="feed">Posts</span>
         </a>
 
         <a href="job.php" class="block rounded-xl px-4 py-2.5 font-semibold text-slate-700 hover:bg-cyan-50">
@@ -236,31 +202,11 @@ if ($currentUserId) {
 
         <hr class="my-2 border-slate-100">
 
-        <!-- Mobile Language & Theme -->
+        <!-- Mobile Theme Toggle -->
 
         <div class="px-4 py-2.5">
 
-            <p class="text-xs font-bold text-slate-400 mb-2" data-t="language">Language</p>
-
-            <div class="flex gap-2">
-
-                <button onclick="switchLang('en')"
-                    class="lang-mobile flex-1 rounded-lg bg-white px-3 py-2 border text-sm font-semibold" data-lang="en">
-
-                    &#127468;&#127463; EN
-
-                </button>
-
-                <button onclick="switchLang('my')"
-                    class="lang-mobile flex-1 rounded-lg bg-white px-3 py-2 border text-sm font-semibold" data-lang="my">
-
-                    &#127478;&#127482; MM
-
-                </button>
-
-            </div>
-
-            <button onclick="toggleTheme()" class="theme-toggle mt-3 flex w-full items-center justify-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-semibold">
+            <button onclick="toggleTheme()" class="theme-toggle flex w-full items-center justify-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-semibold">
 
                 <i class="fa-solid fa-moon"></i> <span>Theme</span>
 
@@ -295,37 +241,5 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    document.addEventListener('click', function (e) {
-        var switcher = document.getElementById('langSwitcher');
-        var dropdown = document.getElementById('langDropdown');
-        if (switcher && dropdown && !switcher.contains(e.target)) {
-            dropdown.classList.add('hidden');
-        }
-    });
-
 });
-
-function updateLangUI(lang) {
-
-    var label = document.getElementById('currentLangLabel');
-    if (label) {
-        label.textContent = lang === 'my' ? 'MM' : 'EN';
-    }
-
-    document.querySelectorAll('.lang-option').forEach(function (btn) {
-        if (btn.getAttribute('data-lang') === lang) {
-            btn.classList.add('bg-cyan-50', 'text-teal-700');
-        } else {
-            btn.classList.remove('bg-cyan-50', 'text-teal-700');
-        }
-    });
-
-    document.querySelectorAll('.lang-mobile').forEach(function (btn) {
-        if (btn.getAttribute('data-lang') === lang) {
-            btn.classList.add('bg-cyan-50', 'border-cyan-300');
-        } else {
-            btn.classList.remove('bg-cyan-50', 'border-cyan-300');
-        }
-    });
-}
 </script>

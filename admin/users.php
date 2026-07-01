@@ -31,9 +31,59 @@ if (isset($_GET['delete'])) {
     exit;
 }
 
+/* Pagination */
+
+$limit = 8;
+
+$page = max(
+    1,
+    (int)($_GET['page'] ?? 1)
+);
+
+$offset = ($page - 1) * $limit;
+
 /* Search */
 
 $search = trim($_GET['search'] ?? '');
+
+/* Total Alumni */
+
+if ($search != '') {
+
+    $countStmt = $conn->prepare("
+        SELECT COUNT(*) total
+        FROM users
+        WHERE role = 'user'
+        AND (
+            name LIKE ?
+            OR email LIKE ?
+            OR approved_id LIKE ?
+        )
+    ");
+
+    $keyword = "%{$search}%";
+
+    $countStmt->bind_param(
+        "sss",
+        $keyword,
+        $keyword,
+        $keyword
+    );
+
+    $countStmt->execute();
+
+    $totalAlumni = $countStmt->get_result()->fetch_assoc()['total'];
+
+} else {
+
+    $totalAlumni = $conn->query("
+        SELECT COUNT(*) total
+        FROM users
+        WHERE role='user'
+    ")->fetch_assoc()['total'];
+}
+
+$totalPages = ceil($totalAlumni / $limit);
 
 /* Alumni Query */
 
@@ -45,6 +95,7 @@ if ($search != '') {
             approved_id,
             name,
             email,
+            profile_image,
             role
         FROM users
         WHERE role = 'user'
@@ -54,15 +105,18 @@ if ($search != '') {
             OR approved_id LIKE ?
         )
         ORDER BY id DESC
+        LIMIT ?, ?
     ");
 
     $keyword = "%{$search}%";
 
     $stmt->bind_param(
-        "sss",
+        "sssii",
         $keyword,
         $keyword,
-        $keyword
+        $keyword,
+        $offset,
+        $limit
     );
 
 } else {
@@ -73,24 +127,24 @@ if ($search != '') {
             approved_id,
             name,
             email,
+            profile_image,
             role
         FROM users
         WHERE role = 'user'
         ORDER BY id DESC
+        LIMIT ?, ?
     ");
+
+    $stmt->bind_param(
+        "ii",
+        $offset,
+        $limit
+    );
 }
 
 $stmt->execute();
 
 $users = $stmt->get_result();
-
-/* Total Alumni */
-
-$totalAlumni = $conn->query("
-    SELECT COUNT(*) total
-    FROM users
-    WHERE role='user'
-")->fetch_assoc()['total'];
 ?>
 
 
@@ -136,16 +190,18 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
         <!-- Search -->
 
-        <div class="bg-white p-5 rounded-3xl shadow mb-6">
+        <div class="bg-whit p-3 rounded-2xl mb-4">
 
             <form method="GET">
 
-                <input
-                    type="text"
-                    name="search"
-                    value="<?= htmlspecialchars($search) ?>"
-                    placeholder="Search Alumni..."
-                    class="w-full border rounded-xl px-4 py-3">
+                <div class="max-w-sm">
+                    <input
+                        type="text"
+                        name="search"
+                        value="<?= htmlspecialchars($search) ?>"
+                        placeholder="Search Alumni..."
+                        class="w-full border rounded-lg px-3 py-1.5 text-sm">
+                </div>
 
             </form>
 
@@ -153,33 +209,33 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
         <!-- Table -->
 
-        <div class="bg-white rounded-3xl shadow overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
 
             <div class="overflow-x-auto">
 
-                <table class="w-full">
+                <table class="w-full table-fixed text-sm">
 
                     <thead class="bg-cyan-50">
 
                         <tr>
 
-                            <th class="p-4 text-left">
+                            <th class="w-16 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                                 ID
                             </th>
 
-                            <th class="p-4 text-left">
+                            <th class="w-1/3 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                                 Name
                             </th>
 
-                            <th class="p-4 text-left">
+                            <th class="w-1/3 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                                 Email
                             </th>
 
-                            <th class="p-4 text-left">
+                            <th class="w-1/4 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                                 Approved ID
                             </th>
 
-                            <th class="p-4 text-left">
+                            <th class="w-36 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                                 Action
                             </th>
 
@@ -193,29 +249,32 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
                         <tr class="border-t">
 
-                            <td class="p-4">
+                            <td class="px-3 py-2.5 align-middle">
                                 <?= $user['id'] ?>
                             </td>
 
-                            <td class="p-4">
-                                <?= htmlspecialchars($user['name']) ?>
+                            <td class="px-3 py-2.5 align-middle">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <img src="<?= !empty($user['profile_image']) ? htmlspecialchars($user['profile_image']) : '../images/default-avatar.svg' ?>" class="h-8 w-8 rounded-full object-cover border border-cyan-100 shrink-0">
+                                    <span class="truncate font-medium"><?= htmlspecialchars($user['name']) ?></span>
+                                </div>
                             </td>
 
-                            <td class="p-4">
+                            <td class="px-3 py-2.5 align-middle truncate">
                                 <?= htmlspecialchars($user['email']) ?>
                             </td>
 
-                            <td class="p-4">
+                            <td class="px-3 py-2.5 align-middle truncate">
                                 <?= htmlspecialchars($user['approved_id']) ?>
                             </td>
 
-                            <td class="p-4">
+                            <td class="px-3 py-2.5 align-middle">
 
-                                <div class="flex gap-2">
+                                <div class="flex gap-2 flex-wrap">
 
                                     <a
                                         href="view_user.php?id=<?= $user['id'] ?>"
-                                        class="bg-blue-500 text-white px-3 py-2 rounded-lg">
+                                        class="bg-blue-500 text-white px-2.5 py-1.5 text-xs rounded-lg">
 
                                         View
 
@@ -224,7 +283,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
                                     <a
                                         href="?delete=<?= $user['id'] ?>"
                                         onclick="return confirm('Delete this alumni?')"
-                                        class="bg-red-500 text-white px-3 py-2 rounded-lg">
+                                        class="bg-red-500 text-white px-2.5 py-1.5 text-xs rounded-lg">
 
                                         Delete
 
@@ -246,6 +305,30 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
         </div>
 
+        <!-- Pagination -->
+
+        <?php if ($totalPages > 1): ?>
+
+        <div class="flex justify-center gap-2 mt-8">
+
+            <?php for($i = 1; $i <= $totalPages; $i++): ?>
+
+            <a href="?<?= $search ? 'search='.urlencode($search).'&' : '' ?>page=<?= $i ?>"
+               class="px-4 py-2 rounded-xl
+               <?= $page == $i
+               ? 'bg-cyan-500 text-white'
+               : 'bg-white shadow' ?>">
+
+                <?= $i ?>
+
+            </a>
+
+            <?php endfor; ?>
+
+        </div>
+
+        <?php endif; ?>
+
     </div>
 
 </div>
@@ -254,4 +337,3 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
 </body>
 </html>
-

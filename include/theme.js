@@ -23,4 +23,10 @@ function updateThemeIcon(theme) {
     });
 }
 
+// Apply theme immediately (for body background) then re-apply icons after DOM ready
 applyTheme();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyTheme);
+} else {
+    applyTheme();
+}

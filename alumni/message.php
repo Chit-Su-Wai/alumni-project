@@ -104,15 +104,15 @@ $users = $stmt->get_result();
 
     <?php include "../include/user_header.php"; ?>
 
-    <div class="max-w-7xl mx-auto p-4">
+    <div class="max-w-7xl mx-auto p-2">
 
         <div class="bg-white rounded-3xl shadow overflow-hidden">
 
-            <div class="grid lg:grid-cols-4 h-[700px]">
+            <div class="grid lg:grid-cols-4 h-auto">
 
                 <div class="border-r overflow-y-auto">
 
-                    <div class="p-4 border-b">
+                    <div class="p-2 border-b">
 
                         <h2 class="font-bold text-xl">
                             Messages
@@ -268,8 +268,7 @@ ORDER BY created_at ASC
                                         <div class="text-xs text-slate-400 mt-1">
 
                                             <?= date(
-                                                'M d, h:i A',
-                                                strtotime($msg['created_at'])
+                                                'Y-m-d H:i:s'
                                             ) ?>
 
                                         </div>

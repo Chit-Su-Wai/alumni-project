@@ -48,25 +48,6 @@ $recentPosts = $conn->query("
         </a>
 
         <div class="hidden items-center gap-2 md:flex">
-            <div class="relative" id="langSwitcher">
-                <button onclick="document.getElementById('langDropdown').classList.toggle('hidden')"
-                    class="flex items-center gap-1.5 rounded-xl border border-cyan-100 px-3.5 py-2 text-sm font-bold text-teal-700 hover:bg-cyan-50 transition">
-                    <i class="fa-solid fa-globe text-xs"></i>
-                    <span id="currentLangLabel">EN</span>
-                    <i class="fa-solid fa-chevron-down text-[10px]"></i>
-                </button>
-                <div id="langDropdown"
-                    class="hidden absolute right-0 mt-2 w-36 rounded-2xl border border-cyan-100 bg-white py-2 shadow-xl z-50">
-                    <button onclick="switchLang('en')"
-                        class="lang-option block w-full text-left px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-cyan-50 transition" data-lang="en">
-                        &#127468;&#127463; EN
-                    </button>
-                    <button onclick="switchLang('my')"
-                        class="lang-option block w-full text-left px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-cyan-50 transition" data-lang="my">
-                        &#127478;&#127482; MM
-                    </button>
-                </div>
-            </div>
 
             <button onclick="toggleTheme()"
                 class="theme-toggle flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-100 bg-white text-sm shadow-sm hover:bg-cyan-50 hover:shadow-md transition-all">
@@ -84,10 +65,6 @@ $recentPosts = $conn->query("
 
     <div id="mobileMenu" class="mx-auto mt-3 hidden max-w-6xl rounded-2xl border border-cyan-100 bg-white/95 p-4 shadow-lg md:hidden">
         <div class="grid gap-3 text-sm font-semibold">
-            <div class="flex gap-2">
-                <button onclick="switchLang('en')" class="flex-1 rounded-xl bg-white border px-3 py-2 text-teal-700 text-sm font-semibold hover:bg-cyan-50 transition" data-lang="en">&#127468;&#127463; EN</button>
-                <button onclick="switchLang('my')" class="flex-1 rounded-xl bg-white border px-3 py-2 text-teal-700 text-sm font-semibold hover:bg-cyan-50 transition" data-lang="my">&#127478;&#127482; MM</button>
-            </div>
 
             <button onclick="toggleTheme()" class="theme-toggle flex items-center justify-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm font-semibold text-teal-700 hover:bg-cyan-50 transition">
 
@@ -457,30 +434,12 @@ $recentPosts = $conn->query("
 </footer>
 
 <script>
-    const menuBtn = document.getElementById("menuBtn");
-    const mobileMenu = document.getElementById("mobileMenu");
+    var menuBtn = document.getElementById("menuBtn");
+    var mobileMenu = document.getElementById("mobileMenu");
 
-    menuBtn.addEventListener("click", () => {
-        mobileMenu.classList.toggle("hidden");
-    });
-
-    document.addEventListener('click', function(e) {
-        var switcher = document.getElementById('langSwitcher');
-        var dropdown = document.getElementById('langDropdown');
-        if (switcher && dropdown && !switcher.contains(e.target)) {
-            dropdown.classList.add('hidden');
-        }
-    });
-
-    function updateLangUI(lang) {
-        var label = document.getElementById('currentLangLabel');
-        if (label) label.textContent = lang === 'my' ? 'MM' : 'EN';
-        document.querySelectorAll('.lang-option').forEach(function(btn) {
-            if (btn.getAttribute('data-lang') === lang) {
-                btn.classList.add('bg-cyan-50', 'text-teal-700');
-            } else {
-                btn.classList.remove('bg-cyan-50', 'text-teal-700');
-            }
+    if (menuBtn && mobileMenu) {
+        menuBtn.addEventListener("click", function () {
+            mobileMenu.classList.toggle("hidden");
         });
     }
 </script>
@@ -488,24 +447,9 @@ $recentPosts = $conn->query("
 <link rel="stylesheet" href="../include/theme.css">
 <script src="../include/theme.js"></script>
 
-<div id="google_translate_element" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;"></div>
-
-<script src="../include/google-translate.js"></script>
-<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
-<style>
-body { top: 0 !important; position: static !important; }
-.goog-te-banner-frame,
-div.goog-te-banner-frame,
-.goog-te-spinner-pos,
-.skiptranslate,
-.goog-te-gadget,
-.goog-te-gadget .goog-te-gadget-simple,
-.goog-logo-link,
-.goog-te-gadget span { display: none !important; height: 0 !important; overflow: hidden !important; }
-.goog-te-banner-frame + body { position: static !important; }
-#google_translate_element { position: absolute !important; width: 0 !important; height: 0 !important; overflow: hidden !important; opacity: 0 !important; pointer-events: none !important; }
-</style>
+<!-- Language system: inject window.LANG then apply translations -->
+<script src="../lang/lang.php"></script>
+<script src="../include/translations.js"></script>
 
 </body>
 </html>
