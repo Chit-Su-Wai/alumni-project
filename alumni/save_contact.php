@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -31,36 +30,50 @@ if (
     exit;
 }
 
+/* Get user's profile image */
+$getUser = $conn->prepare("
+    SELECT profile_image
+    FROM users
+    WHERE id = ?
+");
+
+$getUser->bind_param("i", $user_id);
+$getUser->execute();
+
+$user = $getUser->get_result()->fetch_assoc();
+
+$profile_image = $user['profile_image'] ?? "";
 $stmt = $conn->prepare("
 INSERT INTO contact_messages
 (
     user_id,
     name,
     email,
+    profile_image,
     subject,
     message
 )
 VALUES
 (
-    ?,
-    ?,
-    ?,
-    ?,
-    ?
+    ?, ?, ?, ?, ?, ?
 )
 ");
 
 $stmt->bind_param(
-    "issss",
+    "isssss",
     $user_id,
     $name,
     $email,
+    $profile_image,
     $subject,
     $message
 );
 
 $stmt->execute();
 
+$stmt->close();
+$getUser->close();
+$conn->close();
+
 header("Location: contact.php?success=1");
 exit;
-?>

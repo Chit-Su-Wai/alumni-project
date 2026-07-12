@@ -161,6 +161,11 @@ $posts = $postStmt->get_result();
 
         </section>
 
+        <?php
+        $jobsCount = $jobs->num_rows;
+        include "../include/profile_progress.php";
+        ?>
+
         <!-- Tabs -->
 
         <div class="mt-6 rounded-3xl bg-white p-4 shadow">

@@ -243,46 +243,79 @@ $jobs = $stmt->get_result();
 
             </div>
             <!-- Pagination -->
-            <div class="mt-auto pt-7 pb-4">
-                 <div class="flex justify-center gap-2 mt-8">
+            <?php if ($totalJobs > 0): ?>
+            <div class="mt-8 flex flex-col items-center gap-3 pb-4">
 
-            <?php for($i=1;$i<=$totalPages;$i++): ?>
+                <!-- Info Row -->
+                <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                    <span>
+                        Showing
+                        <strong class="text-slate-700"><?= $offset + 1 ?>&ndash;<?= min($offset + $limit, $totalJobs) ?></strong>
+                        of
+                        <strong class="text-slate-700"><?= $totalJobs ?></strong>
+                    </span>
+                    
+                </div>
 
-            <a href="?page=<?= $i ?>"
-               class="px-4 py-2 rounded-xl
-               <?= $page == $i
-               ? 'bg-cyan-500 text-white'
-               : 'bg-white shadow' ?>">
+                <!-- Controls Row -->
+                <div class="flex items-center gap-2">
 
-                <?= $i ?>
-
-            </a>
-
-            <?php endfor; ?>
-
-        </div>
-            </div>
-
-            <!-- <div class="flex justify-center items-center gap-2 mt-8 mb-6">
-
-                <?php if ($totalPages > 1): ?>
-
-                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-
-                        <a href="?page=<?= $i ?>" class="px-4 py-2 rounded-xl transition
-               <?= $page == $i
-                   ? 'bg-cyan-500 text-white'
-                   : 'bg-white text-slate-700 shadow hover:bg-cyan-50' ?>">
-
-                            <?= $i ?>
-
+                    <!-- Previous -->
+                    <?php if ($page > 1): ?>
+                        <a href="?page=<?= $page - 1 ?>"
+                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
+                            <i class="fa-solid fa-chevron-left text-xs"></i> Previous
                         </a>
+                    <?php else: ?>
+                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
+                            <i class="fa-solid fa-chevron-left text-xs"></i> Previous
+                        </span>
+                    <?php endif; ?>
 
+                    <!-- Page Numbers -->
+                    <?php
+                        $startPage = max(1, $page - 2);
+                        $endPage   = min($totalPages, $page + 2);
+                    ?>
+                    <?php if ($startPage > 1): ?>
+                        <a href="?page=1" class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">1</a>
+                        <?php if ($startPage > 2): ?>
+                            <span class="px-1 text-slate-400">&hellip;</span>
+                        <?php endif; ?>
+                    <?php endif; ?>
+
+                    <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                        <a href="?page=<?= $i ?>"
+                           class="px-3 py-2 rounded-xl text-sm font-medium transition
+                           <?= $page == $i
+                               ? 'bg-cyan-500 text-white shadow-md shadow-cyan-200'
+                               : 'bg-white shadow text-slate-600 hover:bg-cyan-50 hover:text-cyan-700' ?>">
+                            <?= $i ?>
+                        </a>
                     <?php endfor; ?>
 
-                <?php endif; ?>
+                    <?php if ($endPage < $totalPages): ?>
+                        <?php if ($endPage < $totalPages - 1): ?>
+                            <span class="px-1 text-slate-400">&hellip;</span>
+                        <?php endif; ?>
+                        <a href="?page=<?= $totalPages ?>" class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition"><?= $totalPages ?></a>
+                    <?php endif; ?>
 
-            </div> -->
+                    <!-- Next -->
+                    <?php if ($page < $totalPages): ?>
+                        <a href="?page=<?= $page + 1 ?>"
+                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
+                            Next <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </a>
+                    <?php else: ?>
+                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
+                            Next <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </span>
+                    <?php endif; ?>
+
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
 
     </div>

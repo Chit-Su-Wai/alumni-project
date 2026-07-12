@@ -35,6 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $phone = trim($_POST["phone"] ?? "");
         $address = trim($_POST["address"] ?? "");
         $bio = trim($_POST["bio"] ?? "");
+        $skills = trim($_POST["skills"] ?? "");
 
         $profile_image_path = "";
 
@@ -59,11 +60,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if ($messageType !== "error") {
             if ($profile_image_path !== "") {
-                $stmt = $conn->prepare("UPDATE users SET name=?, phone=?, address=?, bio=?, profile_image=?, updated_at=NOW() WHERE id=?");
-                $stmt->bind_param("sssssi", $name, $phone, $address, $bio, $profile_image_path, $user_id);
+                $stmt = $conn->prepare("UPDATE users SET name=?, phone=?, address=?, bio=?, skills=?, profile_image=?, updated_at=NOW() WHERE id=?");
+                $stmt->bind_param("ssssssi", $name, $phone, $address, $bio, $skills, $profile_image_path, $user_id);
             } else {
-                $stmt = $conn->prepare("UPDATE users SET name=?, phone=?, address=?, bio=?, updated_at=NOW() WHERE id=?");
-                $stmt->bind_param("ssssi", $name, $phone, $address, $bio, $user_id);
+                $stmt = $conn->prepare("UPDATE users SET name=?, phone=?, address=?, bio=?, skills=?, updated_at=NOW() WHERE id=?");
+                $stmt->bind_param("sssssi", $name, $phone, $address, $bio, $skills, $user_id);
             }
 
             if ($stmt->execute()) {
@@ -267,6 +268,11 @@ $jobs = $jobStmt->get_result()->fetch_all(MYSQLI_ASSOC);
         </div>
     </section>
 
+    <?php
+    $jobsCount = count($jobs);
+    include "../include/profile_progress.php";
+    ?>
+
     <div id="tabContent-personal" class="tab-content">
         <form id="form-personal" method="POST" enctype="multipart/form-data" class="grid gap-6 lg:grid-cols-2">
             <input type="hidden" name="action" value="save_personal">
@@ -276,12 +282,12 @@ $jobs = $jobStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
                 <div>
                     <label class="mb-1 block text-xs font-black uppercase text-slate-400">Profile Image</label>
-                    <input type="file" name="profile_image" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm">
+                    <input type="file" name="profile_image" id="field-profile_image" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm">
                 </div>
 
                 <div>
                     <label class="mb-1 block text-xs font-black uppercase text-slate-400">Name</label>
-                    <input type="text" name="name" value="<?= e($user["name"]) ?>" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold">
+                    <input type="text" name="name" id="field-name" value="<?= e($user["name"]) ?>" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold">
                 </div>
 
                 <div>
@@ -291,7 +297,7 @@ $jobs = $jobStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
                 <div>
                     <label class="mb-1 block text-xs font-black uppercase text-slate-400">Graduated Year Readonly</label>
-                    <input type="text" value="<?= e($user["graduated_year"] ?? "") ?>" readonly class="w-full cursor-not-allowed rounded-2xl border border-slate-100 bg-slate-100 px-4 py-3 font-semibold text-slate-500">
+                    <input type="text" id="field-graduated_year" value="<?= e($user["graduated_year"] ?? "") ?>" readonly class="w-full cursor-not-allowed rounded-2xl border border-slate-100 bg-slate-100 px-4 py-3 font-semibold text-slate-500">
                 </div>
             </div>
 
@@ -300,24 +306,29 @@ $jobs = $jobStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
                 <div>
                     <label class="mb-1 block text-xs font-black uppercase text-slate-400">Phone</label>
-                    <input type="text" name="phone" value="<?= e($user["phone"] ?? "") ?>" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold">
+                    <input type="text" name="phone" id="field-phone" value="<?= e($user["phone"] ?? "") ?>" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold">
                 </div>
 
                 <div>
                     <label class="mb-1 block text-xs font-black uppercase text-slate-400">Address</label>
-                    <input type="text" name="address" value="<?= e($user["address"] ?? "") ?>" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold">
+                    <input type="text" name="address" id="field-address" value="<?= e($user["address"] ?? "") ?>" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold">
                 </div>
 
                 <div>
                     <label class="mb-1 block text-xs font-black uppercase text-slate-400">Bio</label>
-                    <textarea name="bio" rows="5" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold"><?= e($user["bio"] ?? "") ?></textarea>
+                    <textarea name="bio" id="field-bio" rows="5" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold"><?= e($user["bio"] ?? "") ?></textarea>
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-xs font-black uppercase text-slate-400">Skills & Other Info</label>
+                    <textarea name="skills" id="field-skills" rows="3" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold"><?= e($user["skills"] ?? "") ?></textarea>
                 </div>
             </div>
         </form>
     </div>
 
     <div id="tabContent-experience" class="tab-content hidden space-y-6">
-        <div class="rounded-[2rem] border border-cyan-100 bg-white p-6 shadow-sm">
+        <div id="field-experience" class="rounded-[2rem] border border-cyan-100 bg-white p-6 shadow-sm">
             <div class="mb-6 flex items-center justify-between">
                 <h2 class="text-lg font-black text-slate-800">Work Experience</h2>
                 <button onclick="openExperienceModal()" class="rounded-full bg-cyan-50 px-5 py-2 text-sm font-black text-teal-700 hover:bg-cyan-100">
@@ -368,7 +379,7 @@ $jobs = $jobStmt->get_result()->fetch_all(MYSQLI_ASSOC);
         <form id="form-social" method="POST" class="rounded-[2rem] border border-cyan-100 bg-white p-6 shadow-sm">
             <input type="hidden" name="action" value="save_social">
 
-            <h2 class="mb-6 text-lg font-black text-slate-800">Social Links</h2>
+            <h2 id="field-social" class="mb-6 text-lg font-black text-slate-800">Social Links</h2>
 
             <div class="grid gap-4 md:grid-cols-2">
                 <?php
@@ -587,10 +598,31 @@ function toggleEndDate(isCurrent) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-    const hash = window.location.hash.replace("#", "");
-    // Fixed logic missing expression operators
-    if (hash === "personal" || hash === "social" || hash === "experience") {
-        switchTab(hash);
+    const raw = window.location.hash.replace("#", "");
+    if (!raw) return;
+
+    const fieldToSection = {
+        profile_image: "personal",
+        name: "personal",
+        bio: "personal",
+        graduated_year: "personal",
+        phone: "personal",
+        address: "personal",
+        skills: "personal",
+        experience: "experience",
+        social: "social"
+    };
+
+    if (raw.startsWith("field-")) {
+        const field = raw.substring(6);
+        const section = fieldToSection[field] || "personal";
+        switchTab(section);
+        setTimeout(() => {
+            const el = document.getElementById("field-" + field);
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 200);
+    } else if (raw === "personal" || raw === "social" || raw === "experience") {
+        switchTab(raw);
     }
 });
 </script>

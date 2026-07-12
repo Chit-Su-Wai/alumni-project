@@ -101,11 +101,11 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
 
     <?php include "../include/user_header.php"; ?>
 
-    <div class="max-w-7xl mx-auto px-4 py-4">
+    <div class="max-w-7xl mx-auto px-4 py-4 h-[calc(100vh-6rem)]">
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full items-start">
             <!-- LEFT SIDEBAR -->
-            <div class="hidden lg:block lg:col-span-1 sticky top-20 max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide space-y-2">
+            <div class="hidden lg:block lg:col-span-1 sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide space-y-2">
 
                 <!-- Search -->
                 <div class="bg-white rounded-3xl p-6 shadow-sm border border-cyan-50">
@@ -148,7 +148,7 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
 
             </div>
             <!-- CENTER -->
-            <div class="lg:col-span-2 space-y-5">
+            <div class="lg:col-span-2 space-y-5 overflow-y-auto max-h-[calc(100vh-7rem)] scrollbar-hide">
 
                 <!-- Create Post Box -->
                 <div class="bg-white rounded-3xl p-5 shadow-sm border border-cyan-50">
@@ -361,7 +361,7 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
             </div>
 
             <!-- RIGHT SIDEBAR -->
-            <div class="hidden lg:block lg:col-span-1 sticky top-20 max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide space-y-2">
+            <div class="hidden lg:block lg:col-span-1 sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide space-y-2">
 
                 <!-- Calendar -->
                 <div class="bg-white rounded-3xl p-5 shadow-sm border border-cyan-50">

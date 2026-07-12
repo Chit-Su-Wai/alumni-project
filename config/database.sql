@@ -79,6 +79,31 @@ CREATE TABLE IF NOT EXISTS posts (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- 4c. Profile Views
+CREATE TABLE IF NOT EXISTS profile_views (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    profile_id INT NOT NULL,
+    viewer_id INT NOT NULL,
+    session_id VARCHAR(128) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_view (profile_id, viewer_id, session_id),
+    INDEX (profile_id)
+);
+
+-- 4b. Announcements & Events
+CREATE TABLE IF NOT EXISTS announcements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    type ENUM('announcement','event') NOT NULL DEFAULT 'announcement',
+    title VARCHAR(255) NOT NULL,
+    image VARCHAR(255) DEFAULT NULL,
+    event_date DATE DEFAULT NULL,
+    event_time TIME DEFAULT NULL,
+    location VARCHAR(255) DEFAULT NULL,
+    description TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 -- 5. Post Images
 CREATE TABLE IF NOT EXISTS post_images (
     id INT AUTO_INCREMENT PRIMARY KEY,

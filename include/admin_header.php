@@ -95,6 +95,11 @@ md:flex md:flex-col">
             <span data-t="approved_ids">Approved IDs</span>
         </a>
 
+        <a href="announcements.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
+            <i class="fa-solid fa-bullhorn w-5 text-center text-teal-600"></i>
+            <span data-t="announcements">Announcements</span>
+        </a>
+
         <a href="report.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
             <i class="fa-solid fa-chart-bar w-5 text-center text-teal-600"></i>
             <span data-t="reports">Reports</span>

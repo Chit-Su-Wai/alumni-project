@@ -107,6 +107,29 @@ foreach ($socialFields as $field) {
     }
 }
 
+/* Profile views */
+if (!isset($_SESSION["viewed_profiles"]) || !is_array($_SESSION["viewed_profiles"])) {
+    $_SESSION["viewed_profiles"] = [];
+}
+
+if ($current_user_id !== $profile_id) {
+    if (!in_array($profile_id, $_SESSION["viewed_profiles"], true)) {
+        $viewStmt = $conn->prepare("
+            INSERT IGNORE INTO profile_views (profile_id, viewer_id, session_id)
+            VALUES (?, ?, ?)
+        ");
+        $viewerSession = session_id();
+        $viewStmt->bind_param("iis", $profile_id, $current_user_id, $viewerSession);
+        $viewStmt->execute();
+        $_SESSION["viewed_profiles"][] = $profile_id;
+    }
+}
+
+$viewStmt = $conn->prepare("SELECT COUNT(*) AS total FROM profile_views WHERE profile_id = ?");
+$viewStmt->bind_param("i", $profile_id);
+$viewStmt->execute();
+$profileViews = (int) $viewStmt->get_result()->fetch_assoc()["total"];
+
 $socialItems = [
     "facebook" => ["Facebook", "fa-brands fa-facebook"],
     "linkedin" => ["LinkedIn", "fa-brands fa-linkedin"],
@@ -171,6 +194,11 @@ $socialItems = [
                                     <i class="fa-solid fa-share-nodes mr-1"></i>
                                     <?= $socialCount ?> Social
                                 </span>
+
+                                <span class="rounded-full bg-cyan-50 px-4 py-2 text-xs font-bold text-teal-700">
+                                    <i class="fa-solid fa-eye mr-1"></i>
+                                    <?= $profileViews ?> Views
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -193,6 +221,15 @@ $socialItems = [
 
                     </div>
                 </div>
+
+                <?php if ($current_user_id === $profile_id): ?>
+                <div class="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
+                    <a href="edit_profile.php"
+                        class="rounded-full bg-gradient-to-r from-cyan-400 to-teal-500 px-5 py-3 text-sm font-black text-white shadow hover:opacity-90">
+                        <i class="fa-solid fa-pen mr-1"></i> Edit Profile
+                    </a>
+                </div>
+                <?php endif; ?>
 
                 <div class="mt-6 border-t border-slate-100 pt-4">
                     <div class="flex flex-wrap gap-3 text-sm font-bold">
@@ -234,7 +271,9 @@ $socialItems = [
                     <div>
                         <p class="mb-1 text-xs font-black uppercase text-slate-400">Email</p>
                         <div class="rounded-2xl bg-slate-50 px-4 py-3 font-semibold">
-                            <?= e($user["email"]) ?>
+                            <a href="mailto:<?= e($user["email"]) ?>" class="text-teal-700 hover:underline">
+                                <?= e($user["email"]) ?>
+                            </a>
                         </div>
                     </div>
                     <div>

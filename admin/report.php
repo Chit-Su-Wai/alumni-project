@@ -104,218 +104,263 @@ while($row = $result->fetch_assoc()) {
 
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width, initial-scale=1">
-
-<title>Reports</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
-
-<style>
-
-@media print {
-
-    .no-print {
-        display: none;
-    }
-
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reports</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+    <style>
+        @media print {
+            body { background: white !important; }
+            .no-print, aside, header, footer, nav, .print-hide { display: none !important; }
+            .min-h-screen { min-height: auto !important; }
+            main { padding: 20px !important; overflow: visible !important; }
+            .print-report { display: block !important; }
+            .print-card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; break-inside: avoid; }
+            .print-chart { break-inside: avoid; page-break-inside: avoid; }
+        }
+        .print-report { display: none; }
+    </style>
 </head>
 
 <body class="bg-slate-50">
 <div class="min-h-screen flex">
     <?php include "../include/admin_header.php"; ?>
-<div class="flex-1 p-6">
 
-    <div class="flex justify-between items-center mb-6">
+    <main class="flex-1 min-w-0 p-6 overflow-y-auto">
 
-        <h1 class="text-3xl font-bold text-teal-700">
-            System Reports
-        </h1>
-
-        <button
-            onclick="window.print()"
-            class="no-print bg-gradient-to-r
-            from-cyan-400 to-teal-500
-            text-white px-5 py-3 rounded-xl">
-
-            Print Report
-
-        </button>
-
-    </div>
-
-    <!-- Cards -->
-
-    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-
-        <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 p-4 rounded-2xl shadow">
-            <p class="text-sm text-slate-500">Total Alumni</p>
-            <h2 class="text-3xl font-black text-teal-700 mt-1.5">
-                <?= $totalAlumni ?>
-            </h2>
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 print-hide">
+            <div>
+                <h1 class="text-3xl font-black text-teal-700">Reports</h1>
+                <p class="text-sm text-slate-500 mt-1">Analytics and statistics overview</p>
+            </div>
+            <button onclick="window.print()" class="no-print flex items-center gap-2 bg-gradient-to-r from-cyan-400 to-teal-500 text-white px-5 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition">
+                <i class="fa-solid fa-print"></i> Print Report
+            </button>
         </div>
 
-        <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 p-4 rounded-2xl shadow">
-            <p class="text-sm text-slate-500">Total Jobs</p>
-            <h2 class="text-3xl font-black text-teal-700 mt-1.5">
-                <?= $totalJobs ?>
-            </h2>
+        <!-- Print Only Title -->
+        <div class="print-report mb-6">
+            <h1 class="text-2xl font-black text-slate-800 text-center">Alumni Network System - Report</h1>
         </div>
 
-        <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 p-4 rounded-2xl shadow">
-            <p class="text-sm text-slate-500">Total Posts</p>
-            <h2 class="text-3xl font-black text-teal-700 mt-1.5">
-                <?= $totalPosts ?>
-            </h2>
-        </div>
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
-        <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 p-4 rounded-2xl shadow">
-            <p class="text-sm text-slate-500">Total Messages</p>
-            <h2 class="text-3xl font-black text-teal-700 mt-1.5">
-                <?= $totalMessages ?>
-            </h2>
-        </div>
+            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 hover:shadow-md transition">
+                <div class="flex items-center gap-4">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-cyan-500 text-white shadow-lg shadow-cyan-200">
+                        <i class="fa-solid fa-users text-lg"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Total Alumni</p>
+                        <h2 class="text-2xl font-black text-slate-800"><?= $totalAlumni ?></h2>
+                    </div>
+                </div>
+            </div>
 
-    </div>
+            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 hover:shadow-md transition">
+                <div class="flex items-center gap-4">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-400 to-teal-500 text-white shadow-lg shadow-teal-200">
+                        <i class="fa-solid fa-briefcase text-lg"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Total Jobs</p>
+                        <h2 class="text-2xl font-black text-slate-800"><?= $totalJobs ?></h2>
+                    </div>
+                </div>
+            </div>
 
-    <!-- Charts -->
+            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 hover:shadow-md transition">
+                <div class="flex items-center gap-4">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-teal-400 text-white shadow-lg shadow-cyan-200">
+                        <i class="fa-regular fa-newspaper text-lg"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Total Posts</p>
+                        <h2 class="text-2xl font-black text-slate-800"><?= $totalPosts ?></h2>
+                    </div>
+                </div>
+            </div>
 
-    <div class="grid lg:grid-cols-2 gap-6">
-
-        <!-- Alumni Chart -->
-
-        <div class="bg-white rounded-3xl p-6 shadow">
-
-            <h2 class="font-bold text-xl mb-4">
-                Alumni By Graduation Year
-            </h2>
-
-            <div style="position:relative;height:220px;">
-                <canvas id="alumniChart"></canvas>
+            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 hover:shadow-md transition">
+                <div class="flex items-center gap-4">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg shadow-emerald-200">
+                        <i class="fa-regular fa-envelope text-lg"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Messages</p>
+                        <h2 class="text-2xl font-black text-slate-800"><?= $totalMessages ?></h2>
+                    </div>
+                </div>
             </div>
 
         </div>
 
-        <!-- Jobs Chart -->
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-        <div class="bg-white rounded-3xl p-6 shadow">
+            <!-- Alumni By Graduation Year -->
+            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 print-chart">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-100 text-cyan-600">
+                        <i class="fa-solid fa-graduation-cap text-sm"></i>
+                    </div>
+                    <h2 class="font-bold text-lg text-slate-800">Alumni By Graduation Year</h2>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="alumniChart"></canvas>
+                </div>
+            </div>
 
-            <h2 class="font-bold text-xl mb-4">
-                Jobs By Type
-            </h2>
+            <!-- Jobs By Type -->
+            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 print-chart">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-600">
+                        <i class="fa-solid fa-chart-pie text-sm"></i>
+                    </div>
+                    <h2 class="font-bold text-lg text-slate-800">Jobs By Type</h2>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="jobChart"></canvas>
+                </div>
+            </div>
 
-            <div style="position:relative;height:220px;">
-                <canvas id="jobChart"></canvas>
+            <!-- Posts By Month -->
+            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 print-chart">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-100 text-cyan-600">
+                        <i class="fa-solid fa-chart-column text-sm"></i>
+                    </div>
+                    <h2 class="font-bold text-lg text-slate-800">Posts By Month</h2>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="postChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Messages Status -->
+            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 print-chart">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+                        <i class="fa-solid fa-envelope-open text-sm"></i>
+                    </div>
+                    <h2 class="font-bold text-lg text-slate-800">Messages Status</h2>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="messageChart"></canvas>
+                </div>
             </div>
 
         </div>
 
-        <!-- Posts Chart -->
-
-        <div class="bg-white rounded-3xl p-6 shadow">
-
-            <h2 class="font-bold text-xl mb-4">
-                Posts By Month
-            </h2>
-
-            <div style="position:relative;height:220px;">
-                <canvas id="postChart"></canvas>
-            </div>
-
-        </div>
-
-        <!-- Messages Chart -->
-
-        <div class="bg-white rounded-3xl p-6 shadow">
-
-            <h2 class="font-bold text-xl mb-4">
-                Messages Status
-            </h2>
-
-            <div style="position:relative;height:220px;">
-                <canvas id="messageChart"></canvas>
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
+    </main>
 </div>
 
 <?php include "../include/admin_footer.php"; ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    if (typeof Chart === 'undefined') {
-        return;
-    }
+    if (typeof Chart === 'undefined') return;
 
-    var alumniChart = document.getElementById('alumniChart');
-    var jobChart = document.getElementById('jobChart');
-    var postChart = document.getElementById('postChart');
-    var messageChart = document.getElementById('messageChart');
+    var chartColors = {
+        cyan: '#06b6d4',
+        cyanLight: '#22d3ee',
+        teal: '#14b8a6',
+        tealLight: '#2dd4bf',
+        emerald: '#10b981',
+        red: '#ef4444'
+    };
 
-    if (alumniChart) {
-        new Chart(alumniChart, {
+    var tooltipStyle = {
+        backgroundColor: '#0f172a',
+        titleFont: { weight: 'bold', size: 13 },
+        bodyFont: { size: 12 },
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: true,
+        boxPadding: 4
+    };
+
+    var alumniCanvas = document.getElementById('alumniChart');
+    if (alumniCanvas) {
+        new Chart(alumniCanvas, {
             type: 'bar',
             data: {
                 labels: <?= json_encode(array_column($alumniData, 'graduated_year')) ?>,
                 datasets: [{
                     label: 'Alumni',
                     data: <?= json_encode(array_map('intval', array_column($alumniData, 'total'))) ?>,
-                    backgroundColor: '#06b6d4',
-                    borderRadius: 8
+                    backgroundColor: chartColors.cyan,
+                    hoverBackgroundColor: chartColors.cyanLight,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    barPercentage: 0.7
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: { top: 5, bottom: 5 } },
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: tooltipStyle
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, font: { size: 11 }, padding: 8 },
+                        grid: { color: '#f1f5f9', drawBorder: false },
+                        border: { display: false }
+                    },
+                    x: {
+                        ticks: { font: { size: 11 }, padding: 8 },
+                        grid: { display: false },
+                        border: { display: false }
+                    }
                 }
             }
         });
     }
 
-    if (jobChart) {
-        new Chart(jobChart, {
+    var jobCanvas = document.getElementById('jobChart');
+    if (jobCanvas) {
+        new Chart(jobCanvas, {
             type: 'doughnut',
             data: {
                 labels: ['Full Time', 'Part Time'],
                 datasets: [{
                     data: [<?= (int)$fullTime ?>, <?= (int)$partTime ?>],
-                    backgroundColor: ['#06b6d4', '#14b8a6'],
-                    borderWidth: 0
+                    backgroundColor: [chartColors.cyan, chartColors.teal],
+                    hoverBackgroundColor: [chartColors.cyanLight, chartColors.tealLight],
+                    borderWidth: 0,
+                    spacing: 3
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: 5 },
+                cutout: '65%',
                 plugins: {
-                    legend: { position: 'bottom' }
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12 } }
+                    },
+                    tooltip: tooltipStyle
                 }
             }
         });
     }
 
-    if (postChart) {
-        new Chart(postChart, {
+    var postCanvas = document.getElementById('postChart');
+    if (postCanvas) {
+        new Chart(postCanvas, {
             type: 'bar',
             data: {
                 labels: <?= json_encode(array_map(function ($post) {
@@ -325,39 +370,63 @@ document.addEventListener('DOMContentLoaded', function () {
                 datasets: [{
                     label: 'Posts',
                     data: <?= json_encode(array_map('intval', array_column($postData, 'total'))) ?>,
-                    backgroundColor: '#14b8a6',
-                    borderRadius: 8
+                    backgroundColor: chartColors.teal,
+                    hoverBackgroundColor: chartColors.tealLight,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    barPercentage: 0.7
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: { top: 5, bottom: 5 } },
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: tooltipStyle
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, font: { size: 11 }, padding: 8 },
+                        grid: { color: '#f1f5f9', drawBorder: false },
+                        border: { display: false }
+                    },
+                    x: {
+                        ticks: { font: { size: 11 }, padding: 8 },
+                        grid: { display: false },
+                        border: { display: false }
+                    }
                 }
             }
         });
     }
 
-    if (messageChart) {
-        new Chart(messageChart, {
+    var messageCanvas = document.getElementById('messageChart');
+    if (messageCanvas) {
+        new Chart(messageCanvas, {
             type: 'doughnut',
             data: {
                 labels: ['Read', 'Unread'],
                 datasets: [{
                     data: [<?= (int)$readMsg ?>, <?= (int)$unreadMsg ?>],
-                    backgroundColor: ['#10b981', '#ef4444'],
-                    borderWidth: 0
+                    backgroundColor: [chartColors.emerald, chartColors.red],
+                    hoverBackgroundColor: ['#34d399', '#f87171'],
+                    borderWidth: 0,
+                    spacing: 3
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: 5 },
+                cutout: '65%',
                 plugins: {
-                    legend: { position: 'bottom' }
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12 } }
+                    },
+                    tooltip: tooltipStyle
                 }
             }
         });

@@ -39,9 +39,10 @@ if ($currentUserId) {
 
     $msgStmt = $conn->prepare("
         SELECT COUNT(*) AS total
-        FROM messages
-        WHERE receiver_id = ?
-        AND is_read = 0
+        FROM messages m
+        INNER JOIN users u ON u.id = m.sender_id
+        WHERE m.receiver_id = ?
+        AND m.is_read = 0
     ");
 
     $msgStmt->bind_param("i", $currentUserId);
@@ -93,6 +94,11 @@ if ($currentUserId) {
             <a href="directory.php" class="rounded-full px-3 py-2 text-sm font-bold text-teal-700 hover:bg-white/70">
                 <i class="fa-solid fa-users mr-1"></i>
                 <span data-t="directory">Directory</span>
+            </a>
+
+            <a href="announcements.php" class="rounded-full px-3 py-2 text-sm font-bold text-teal-700 hover:bg-white/70">
+                <i class="fa-solid fa-bullhorn mr-1"></i>
+                <span data-t="announcements">Announcements</span>
             </a>
 
             <a href="message.php" class="rounded-full px-3 py-2 text-sm font-bold text-teal-700 hover:bg-white/70">
@@ -190,6 +196,10 @@ if ($currentUserId) {
 
         <a href="directory.php" class="block rounded-xl px-4 py-2.5 font-semibold text-slate-700 hover:bg-cyan-50">
             <span data-t="directory">Directory</span>
+        </a>
+
+        <a href="announcements.php" class="block rounded-xl px-4 py-2.5 font-semibold text-slate-700 hover:bg-cyan-50">
+            <span data-t="announcements">Announcements</span>
         </a>
 
         <a href="message.php" class="block rounded-xl px-4 py-2.5 font-semibold text-slate-700 hover:bg-cyan-50">
