@@ -26,23 +26,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 if (password_verify($password, $user["password"])) {
 
-                    session_regenerate_id(true);
+                    $userRole = $user["role"] ?? "user";
+                    $userStatus = $user["status"] ?? "active";
 
-                    $_SESSION["user_id"] = $user["id"];
-                    $_SESSION["user_name"] = $user["name"];
-                    $_SESSION["user_email"] = $user["email"];
-                    $_SESSION["role"] = $user["role"];
-
-                    if ($user["role"] == "admin") {
-
-                        header("Location: ../admin/dashboard.php");
-                        exit;
-
+                    if (($userRole === "admin" || $userRole === "super_admin") && $userStatus !== "active") {
+                        $error = "This admin account is inactive.";
                     } else {
 
-                        header("Location: profile.php");
-                        exit;
+                        session_regenerate_id(true);
 
+                        $_SESSION["user_id"] = $user["id"];
+                        $_SESSION["user_name"] = $user["name"];
+                        $_SESSION["user_email"] = $user["email"];
+                        $_SESSION["role"] = ($userRole === "admin" || $userRole === "super_admin") ? "admin" : $userRole;
+                        $_SESSION["admin_role"] = $userRole;
+
+                        if ($userRole === "admin" || $userRole === "super_admin") {
+
+                            header("Location: ../admin/dashboard.php");
+                            exit;
+
+                        } else {
+
+                            header("Location: profile.php");
+                            exit;
+
+                        }
                     }
 
                 } else {

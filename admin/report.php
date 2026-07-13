@@ -14,10 +14,10 @@ require_once "../config/db.php";
 
 /* Cards */
 
-$totalAlumni = $conn->query("
+$totalAlumni = $conn->query(" 
 SELECT COUNT(*) total
 FROM users
-WHERE role != 'admin'
+WHERE role NOT IN ('admin', 'super_admin')
 ")->fetch_assoc()['total'];
 
 $totalJobs = $conn->query("
