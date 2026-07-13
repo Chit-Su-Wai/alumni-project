@@ -137,12 +137,12 @@ if ($yearResult) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 
-<body class="min-h-screen bg-gradient-to-br from-white via-cyan-50 to-teal-50 text-slate-800">
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-white via-cyan-50 to-teal-50 text-slate-800">
 
 <?php include "../include/user_header.php"; ?>
-<main class="mx-auto max-w-7xl px-3 py-5">
-<section class="mb-6 rounded-[2rem] border border-cyan-100  p-4 shadow-sm">
-    <form method="GET" class="grid gap-3 md:grid-cols-[1fr_220px_200px]">
+<main class="flex-1 mx-auto w-full max-w-7xl px-4 py-6">
+<section class="mb-6 rounded-3xl bg-white p-5 shadow-sm">
+    <form method="GET" class="grid w-full gap-4 md:grid-cols-[1fr_220px_200px]">
         <div class="relative">
             <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
             <input

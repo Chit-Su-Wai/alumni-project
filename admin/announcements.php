@@ -29,13 +29,14 @@ if (isset($_GET['delete'])) {
     $stmt->bind_param("i", $id);
     $stmt->execute();
 
-    header("Location: announcements.php");
+    $returnPage = max(1, (int) ($_GET['page'] ?? 1));
+    header("Location: announcements.php?page=" . $returnPage);
     exit;
 }
 
 /* Pagination */
 
-$limit = 9;
+$limit = 6;
 
 $page = max(1, (int) ($_GET['page'] ?? 1));
 $offset = ($page - 1) * $limit;
@@ -162,7 +163,7 @@ $items = $stmt->get_result();
                                     class="rounded-xl bg-blue-500 hover:bg-blue-600 px-3 py-2 text-sm text-white transition">
                                     <i class="fa-solid fa-pen mr-1"></i> Edit
                                 </a>
-                                <a href="?delete=<?= $item['id'] ?>" onclick="return confirm('Delete this item?')"
+                                <a href="?delete=<?= $item['id'] ?>&page=<?= $page ?>" onclick="return confirm('Delete this item?')"
                                     class="rounded-xl bg-red-500 hover:bg-red-600 px-3 py-2 text-sm text-white transition">
                                     <i class="fa-solid fa-trash mr-1"></i> Delete
                                 </a>
@@ -174,8 +175,20 @@ $items = $stmt->get_result();
             </div>
 
             <!-- Pagination -->
-            <?php if ($totalPages > 1): ?>
+            <?php if ($total > 0): ?>
             <div class="mt-8 flex flex-col items-center gap-3 pb-4">
+
+                <!-- Info Row -->
+                <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                    <span>
+                        Showing
+                        <strong class="text-slate-700"><?= $offset + 1 ?>&ndash;<?= min($offset + $limit, $total) ?></strong>
+                        of
+                        <strong class="text-slate-700"><?= $total ?></strong>
+                        announcements
+                    </span>
+                </div>
+
                 <div class="flex items-center gap-2">
                     <?php if ($page > 1): ?>
                         <a href="?page=<?= $page - 1 ?>"

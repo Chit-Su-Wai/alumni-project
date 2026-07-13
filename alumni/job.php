@@ -102,11 +102,11 @@ while ($row = $result->fetch_assoc()) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 
-<body class="bg-slate-50">
+<body class="min-h-screen flex flex-col bg-slate-50">
 
     <?php include "../include/user_header.php"; ?>
 
-    <div class="max-w-7xl mx-auto px-4 py-6 flex-1 flex flex-col min-h-screen">
+    <main class="flex-1 mx-auto max-w-7xl px-4 py-6 w-full">
 
         <div class="bg-white rounded-3xl p-5 shadow-sm mb-6">
             <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -245,7 +245,7 @@ while ($row = $result->fetch_assoc()) {
 
         </div>
 
-    </div>
+    </main>
 
 <?php include "../include/footer.php"; ?>
 
