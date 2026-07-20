@@ -8,6 +8,7 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 require_once "../config/db.php";
+require_once "../include/request_guard.php";
 
 $error = "";
 
@@ -23,13 +24,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     } else {
 
-        /* Create Post */
+        if (request_guard_is_duplicate('create_post', [
+            'user_id' => $user_id,
+            'content' => $content,
+            'category' => $category,
+            'images' => array_map('basename', $_FILES['images']['name'] ?? []),
+        ])) {
+            $error = "Please wait and submit the post only once.";
+        } else {
 
-        $stmt = $conn->prepare(
-            "INSERT INTO posts
-            (user_id, content, category)
-            VALUES (?, ?, ?)"
-        );
+            /* Create Post */
+
+            $stmt = $conn->prepare(
+                "INSERT INTO posts
+                (user_id, content, category)
+                VALUES (?, ?, ?)"
+            );
 
         $stmt->bind_param(
             "iss",
@@ -38,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $category
         );
 
-        if ($stmt->execute()) {
+            if ($stmt->execute()) {
 
             $post_id = $conn->insert_id;
 
@@ -88,8 +98,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
 
-            header("Location: feed.php");
-            exit;
+                header("Location: feed.php");
+                exit;
+            }
         }
     }
 }
@@ -128,9 +139,9 @@ Create Post
 
 <a
 href="feed.php"
-class="text-cyan-600 font-semibold">
+class="btn btn-ghost btn-sm">
 
-Back
+<i class="fa-solid fa-arrow-left"></i> Back
 
 </a>
 
@@ -155,7 +166,7 @@ class="space-y-5">
 <div>
 
 <label
-class="mb-2 block font-semibold">
+class="ui-label">
 
 Category
 
@@ -164,7 +175,7 @@ Category
 <select
 name="category"
 required
-class="w-full rounded-xl border border-slate-200 px-4 py-3">
+class="input-base">
 
 <option value="General">
 General
@@ -189,7 +200,7 @@ News
 <div>
 
 <label
-class="mb-2 block font-semibold">
+class="ui-label">
 
 Content
 
@@ -200,14 +211,14 @@ name="content"
 rows="6"
 required
 placeholder="What's on your mind?"
-class="w-full rounded-xl border border-slate-200 p-4"></textarea>
+class="input-base"></textarea>
 
 </div>
 
 <div>
 
 <label
-class="mb-2 block font-semibold">
+class="ui-label">
 
 Upload Photos
 
@@ -218,7 +229,7 @@ type="file"
 name="images[]"
 multiple
 accept="image/*"
-class="w-full rounded-xl border border-slate-200 p-3">
+class="input-base">
 
 <p class="mt-2 text-sm text-slate-500">
 You can select multiple photos.
@@ -228,9 +239,9 @@ You can select multiple photos.
 
 <button
 type="submit"
-class="w-full rounded-xl bg-cyan-500 py-3 font-bold text-white">
+class="btn btn-primary btn-block">
 
-Post
+<i class="fa-solid fa-paper-plane"></i> Post
 
 </button>
 

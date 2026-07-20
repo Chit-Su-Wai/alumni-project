@@ -25,13 +25,13 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     role ENUM('user','admin','super_admin') NOT NULL DEFAULT 'user',
     status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+    email_verified_at DATETIME DEFAULT NULL,
     phone VARCHAR(20) DEFAULT NULL,
     address TEXT DEFAULT NULL,
     profile_image VARCHAR(255) DEFAULT NULL,
     cover_image VARCHAR(255) DEFAULT NULL,
     graduated_year YEAR DEFAULT NULL,
     bio TEXT DEFAULT NULL,
-    skills TEXT DEFAULT NULL,
     facebook VARCHAR(255) DEFAULT NULL,
     linkedin VARCHAR(255) DEFAULT NULL,
     github VARCHAR(255) DEFAULT NULL,
@@ -114,6 +114,19 @@ CREATE TABLE IF NOT EXISTS post_images (
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
 
+-- 6b. OTP Verification
+CREATE TABLE IF NOT EXISTS otps (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(100) NOT NULL,
+    otp VARCHAR(6) NOT NULL,
+    type ENUM('register','reset') NOT NULL,
+    expires_at DATETIME NOT NULL,
+    verified TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_email_type (email, type),
+    INDEX idx_expires (expires_at)
+);
+
 -- 6. Post Likes
 CREATE TABLE IF NOT EXISTS post_likes (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -145,7 +158,48 @@ CREATE TABLE contact_messages (
     email VARCHAR(100),
     subject VARCHAR(255),
     message TEXT,
+    is_read TINYINT(1) NOT NULL DEFAULT 0,
+    replied_at DATETIME DEFAULT NULL,
+    reply_message TEXT NULL,
+    reply_admin_id INT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS activity_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    admin_id INT NOT NULL,
+    action VARCHAR(80) NOT NULL,
+    entity_type VARCHAR(80) DEFAULT NULL,
+    entity_id VARCHAR(50) DEFAULT NULL,
+    description TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_created_at (created_at),
+    INDEX idx_admin_id (admin_id),
+    INDEX idx_action (action)
+);
+
+CREATE TABLE IF NOT EXISTS saved_posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    post_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_saved_post (user_id, post_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_post_id (post_id)
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    body TEXT DEFAULT NULL,
+    link VARCHAR(255) DEFAULT NULL,
+    is_read TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_is_read (is_read),
+    INDEX idx_created_at (created_at)
 );
 
 CREATE TABLE messages (
@@ -153,6 +207,7 @@ CREATE TABLE messages (
     sender_id INT NOT NULL,
     receiver_id INT NOT NULL,
     message TEXT NOT NULL,
+    is_read TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -81,6 +81,15 @@ $result = $stmt->get_result();
 $posts = $result->fetch_all(MYSQLI_ASSOC);
 $totalPosts = count($posts);
 
+$savedPostIds = [];
+$savedStmt = $conn->prepare("SELECT post_id FROM saved_posts WHERE user_id = ?");
+$savedStmt->bind_param("i", $user_id);
+$savedStmt->execute();
+$savedResult = $savedStmt->get_result();
+while ($savedRow = $savedResult->fetch_assoc()) {
+    $savedPostIds[(int) $savedRow['post_id']] = true;
+}
+
 /* Recent Posts for Sidebar — default: last 3 days */
 $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_image FROM posts p INNER JOIN users u ON p.user_id = u.id WHERE u.role = 'user' AND p.created_at >= DATE_SUB(NOW(), INTERVAL 3 DAY) ORDER BY p.created_at DESC LIMIT 20");
 ?>
@@ -116,14 +125,17 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
                     </h3>
 
                     <form method="GET" class="mt-4">
-                        <input type="text" name="search" value="<?= htmlspecialchars($search) ?>"
-                            placeholder="Search posts..." data-t-placeholder="search_posts"
-                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                        <div class="search-box">
+                            <i class="fa-solid fa-search"></i>
+                            <input type="text" name="search" value="<?= htmlspecialchars($search) ?>"
+                                placeholder="Search posts..." data-t-placeholder="search_posts"
+                                class="input-base">
+                        </div>
 
                         <button type="submit"
-                            class="w-full mt-3 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-500 py-2.5 text-sm font-bold text-white shadow hover:shadow-md transition"
+                            class="btn btn-primary btn-block mt-3"
                             data-t="search">
-                            Search
+                            <i class="fa-solid fa-magnifying-glass"></i> Search
                         </button>
                     </form>
                 </div>
@@ -162,10 +174,13 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
                 </div>
 
                 <?php if (count($posts) == 0): ?>
-                    <div class="bg-white rounded-3xl p-10 text-center shadow-sm border border-cyan-50">
-                        <i class="fa-regular fa-face-smile text-5xl text-slate-300"></i>
-                        <h3 class="mt-4 text-xl font-bold text-slate-700" data-t="no_posts_found">No posts found</h3>
-                    </div>
+                    <?php
+                    $es_icon    = 'fa-regular fa-newspaper';
+                    $es_title   = 'No posts found';
+                    $es_message = 'Try a different search or be the first to share something.';
+                    $es_action  = '<a href="create_post.php" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Create Post</a>';
+                    include '../include/empty_state.php';
+                    ?>
                 <?php endif; ?>
 
                 <?php foreach ($posts as $post): ?>
@@ -193,7 +208,8 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
                         <div class="flex items-start justify-between">
                             <div class="flex items-center gap-3">
                                 <img src="<?= !empty($post['profile_image']) ? htmlspecialchars($post['profile_image']) : '../images/default-avatar.svg' ?>"
-                                    class="h-11 w-11 rounded-full object-cover border-2 border-cyan-100">
+                                    class="h-11 w-11 rounded-full object-cover border-2 border-cyan-100 cursor-zoom-in"
+                                    onclick="openLightbox(this.src, '<?= htmlspecialchars($post['name'], ENT_QUOTES) ?>')">
                                 <div>
                                     <h3 class="font-bold text-sm text-slate-800">
                                         <?= htmlspecialchars($post['name']) ?>
@@ -206,15 +222,32 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
                                 </div>
                             </div>
                             <?php if ($post['user_id'] == $_SESSION['user_id']): ?>
-                                <div class="flex gap-2">
+                                <div class="flex items-center gap-2">
+                                    <button type="button"
+                                        onclick="toggleSavePost(<?= $post['id'] ?>, this)"
+                                        data-saved="<?= !empty($savedPostIds[$post['id']]) ? '1' : '0' ?>"
+                                        aria-pressed="<?= !empty($savedPostIds[$post['id']]) ? 'true' : 'false' ?>"
+                                        class="h-8 w-8 flex items-center justify-center rounded-full border <?= !empty($savedPostIds[$post['id']]) ? 'border-cyan-100 bg-cyan-50 text-teal-700' : 'border-slate-100 bg-white text-slate-500' ?> hover:bg-cyan-50 transition"
+                                        title="<?= !empty($savedPostIds[$post['id']]) ? 'Unsave Post' : 'Save Post' ?>">
+                                        <i class="<?= !empty($savedPostIds[$post['id']]) ? 'fa-solid' : 'fa-regular' ?> fa-bookmark text-xs"></i>
+                                    </button>
                                     <a href="edit_post.php?id=<?= $post['id'] ?>"
                                         class="h-8 w-8 flex items-center justify-center rounded-full text-cyan-500 hover:bg-cyan-50 transition"><i
                                             class="fa-solid fa-pen text-xs"></i></a>
                                     <a href="delete_post.php?id=<?= $post['id'] ?>"
-                                        onclick="return confirm('Delete this post?')"
+                                        onclick="event.preventDefault(); confirmDialog('Delete this post?', function(){ window.location.href='delete_post.php?id=<?= $post['id'] ?>'; }, {title:'Delete Post', confirmText:'Delete'})"
                                         class="h-8 w-8 flex items-center justify-center rounded-full text-red-400 hover:bg-red-50 transition"><i
                                             class="fa-solid fa-trash text-xs"></i></a>
                                 </div>
+                            <?php else: ?>
+                                <button type="button"
+                                    onclick="toggleSavePost(<?= $post['id'] ?>, this)"
+                                    data-saved="<?= !empty($savedPostIds[$post['id']]) ? '1' : '0' ?>"
+                                    aria-pressed="<?= !empty($savedPostIds[$post['id']]) ? 'true' : 'false' ?>"
+                                    class="h-8 w-8 flex items-center justify-center rounded-full border <?= !empty($savedPostIds[$post['id']]) ? 'border-cyan-100 bg-cyan-50 text-teal-700' : 'border-slate-100 bg-white text-slate-500' ?> hover:bg-cyan-50 transition"
+                                    title="<?= !empty($savedPostIds[$post['id']]) ? 'Unsave Post' : 'Save Post' ?>">
+                                    <i class="<?= !empty($savedPostIds[$post['id']]) ? 'fa-solid' : 'fa-regular' ?> fa-bookmark text-xs"></i>
+                                </button>
                             <?php endif; ?>
                         </div>
 
@@ -231,7 +264,8 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
                         <!-- Single Image -->
                         <?php if (!empty($post['image'])): ?>
                             <img src="<?= htmlspecialchars($post['image']) ?>"
-                                class="mt-3 w-full max-h-[400px] object-cover rounded-2xl">
+                                class="mt-3 w-full max-h-[400px] object-cover rounded-2xl cursor-zoom-in"
+                                onclick="openLightbox(this.src, 'Post image')">
                         <?php endif; ?>
 
                         <!-- Multiple Images -->
@@ -244,7 +278,7 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
                         <?php if ($images->num_rows > 0): ?>
                             <div class="grid grid-cols-2 gap-2 mt-3">
                                 <?php while ($img = $images->fetch_assoc()): ?>
-                                    <img src="<?= htmlspecialchars($img['image']) ?>" class="h-48 w-full object-cover rounded-xl">
+                                    <img src="<?= htmlspecialchars($img['image']) ?>" class="h-48 w-full object-cover rounded-xl cursor-zoom-in" onclick="openLightbox(this.src, 'Post image')">
                                 <?php endwhile; ?>
                             </div>
                         <?php endif; ?>
@@ -302,7 +336,7 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
 
                         <!-- Comment Section -->
                         <div id="comment-section-<?= $post['id'] ?>" class="hidden mt-3 border-t border-slate-100 pt-3">
-                            <form onsubmit="submitComment(event, <?= $post['id'] ?>)" class="flex gap-2">
+                            <form onsubmit="submitComment(event, <?= $post['id'] ?>)" data-async-form="true" class="flex gap-2">
                                 <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
                                 <input type="text" id="comment-input-<?= $post['id'] ?>" name="comment"
                                     placeholder="Write a comment..." required data-t-placeholder="write_comment"
@@ -331,7 +365,7 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
                                                         <a href="feed.php?edit_comment=<?= $com['id'] ?>"
                                                             class="text-cyan-600 hover:underline">Edit</a>
                                                         <a href="feed.php?delete_comment=<?= $com['id'] ?>"
-                                                            onclick="return confirm('Delete comment?')"
+                                                            onclick="event.preventDefault(); confirmDialog('Delete comment?', function(){ window.location.href='feed.php?delete_comment=<?= $com['id'] ?>'; }, {title:'Delete Comment', confirmText:'Delete'})"
                                                             class="text-red-500 hover:underline">Delete</a>
                                                     </div>
                                                 <?php endif; ?>
@@ -343,7 +377,7 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
                                                         value="<?= htmlspecialchars($com['comment']) ?>"
                                                         class="flex-1 border rounded-xl px-3 py-2 text-sm" required>
                                                     <button type="submit" name="update_comment"
-                                                        class="bg-cyan-500 text-white px-3 py-2 rounded-xl text-sm font-bold">Save</button>
+                                                        class="btn btn-primary btn-sm">Save</button>
                                                 </form>
                                             <?php else: ?>
                                                 <p class="mt-1 text-sm text-slate-600"><?= htmlspecialchars($com['comment']) ?></p>
@@ -421,7 +455,7 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
             <h3 class="font-bold text-lg mb-4 text-slate-800" data-t="share_post">Share Post</h3>
             <div class="space-y-3">
                 <button onclick="copyLink()"
-                    class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-400 to-teal-500 text-white py-3 rounded-xl font-bold shadow hover:shadow-md transition"
+                    class="btn btn-primary btn-block"
                     data-t="copy_link"><i class="fa-solid fa-link"></i> Copy Link</button>
                 <button onclick="shareFacebook()"
                     class="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition"
@@ -430,7 +464,7 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
                     class="w-full flex items-center justify-center gap-2 bg-sky-500 text-white py-3 rounded-xl font-bold hover:bg-sky-600 transition"
                     data-t="telegram"><i class="fa-brands fa-telegram"></i> Telegram</button>
                 <button onclick="closeShareMenu()"
-                    class="w-full bg-slate-100 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition"
+                    class="btn btn-ghost btn-block"
                     data-t="cancel">Cancel</button>
             </div>
         </div>
@@ -452,7 +486,7 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
 
         function copyLink() {
             navigator.clipboard.writeText(currentShareLink);
-            alert('Link Copied Successfully!');
+            showToast('success', 'Link copied to clipboard!', {title: 'Copied'});
         }
 
         function shareFacebook() {
@@ -471,6 +505,12 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
 
         /* AJAX Like */
         function toggleLike(postId) {
+            var lockKey = 'like-' + postId;
+            if (!lockRequest(lockKey)) return;
+
+            var btn = document.getElementById('like-btn-' + postId);
+            if (btn) btn.disabled = true;
+
             var formData = new FormData();
             formData.append('post_id', postId);
 
@@ -506,6 +546,10 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
                     } else {
                         info.classList.add('hidden');
                     }
+                })
+                .finally(function () {
+                    unlockRequest(lockKey);
+                    if (btn) btn.disabled = false;
                 });
         }
 
@@ -513,10 +557,16 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
         function submitComment(e, postId) {
             e.preventDefault();
 
+            var form = e.target;
             var input = document.getElementById('comment-input-' + postId);
             var text = input.value.trim();
 
             if (!text) return;
+
+            var lockKey = 'comment-' + postId;
+            if (!lockRequest(lockKey)) return;
+
+            setSubmitButtonsState(form, true);
 
             var formData = new FormData();
             formData.append('post_id', postId);
@@ -549,6 +599,12 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
 
                     countEl.textContent = data.count;
                     info.classList.remove('hidden');
+                })
+                .catch(function () {
+                })
+                .finally(function () {
+                    unlockRequest(lockKey);
+                    setSubmitButtonsState(form, false);
                 });
         }
 
@@ -608,7 +664,7 @@ $recent = $conn->query("SELECT p.id, p.content, p.created_at, u.name, u.profile_
                 var list  = document.getElementById('recentPostsList');
                 var label = document.getElementById('recentDateLabel');
 
-                list.innerHTML = '<p class="text-xs text-slate-400 animate-pulse">Loading...</p>';
+                list.innerHTML = '<div class="space-y-3"><div class="flex items-center gap-3"><div class="skeleton sk-avatar"></div><div class="flex-1"><div class="skeleton sk-line sk-md"></div><div class="skeleton sk-line sk-sm"></div></div></div></div>';
 
                 fetch(url)
                     .then(function (r) { return r.json(); })

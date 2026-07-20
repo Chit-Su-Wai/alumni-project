@@ -143,20 +143,20 @@ if ($yearResult) {
 <main class="flex-1 mx-auto w-full max-w-7xl px-4 py-6">
 <section class="mb-6 rounded-3xl bg-white p-5 shadow-sm">
     <form method="GET" class="grid w-full gap-4 md:grid-cols-[1fr_220px_200px]">
-        <div class="relative">
-            <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <div class="search-box">
+            <i class="fa-solid fa-search"></i>
             <input
                 type="text"
                 name="search"
                 value="<?= e($search) ?>"
                 placeholder="Search name or email..."
-                class="w-full rounded-2xl border border-cyan-100 bg-cyan-50/50 py-3 pl-9 pr-4 text-sm font-semibold outline-none focus:border-teal-400 focus:bg-white"
+                class="input-base"
             >
         </div>
 
         <select
             name="year"
-            class="rounded-2xl border border-cyan-100 bg-cyan-50/50 px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:border-teal-400 focus:bg-white"
+            class="input-base"
             onchange="this.form.submit()"
         >
             <option value="">All Years</option>
@@ -170,13 +170,13 @@ if ($yearResult) {
         <div class="flex items-center gap-2 whitespace-nowrap">
             <button
                 type="submit"
-                class="rounded-2xl bg-gradient-to-r from-cyan-400 to-teal-500 px-5 py-3 text-sm font-black text-white shadow hover:opacity-90 transition"
+                class="btn btn-primary"
             >
-                Search
+                <i class="fa-solid fa-magnifying-glass"></i> Search
             </button>
             <a
                 href="directory.php"
-                class="rounded-2xl bg-gradient-to-r from-cyan-400 to-teal-500 px-5 py-3 text-sm font-black text-white shadow hover:opacity-90 transition text-center"
+                class="btn btn-ghost text-center"
             >
                 Clear
             </a>
@@ -185,13 +185,12 @@ if ($yearResult) {
 </section>
 
     <?php if (count($users) === 0): ?>
-        <div class="rounded-[2rem] border border-cyan-100 bg-white p-10 text-center shadow-sm">
-            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-cyan-50 text-2xl text-teal-600">
-                <i class="fa-solid fa-users"></i>
-            </div>
-            <h2 class="mt-4 text-xl font-black text-slate-800">No alumni found</h2>
-            <p class="mt-2 text-sm font-semibold text-slate-500">Try another search keyword.</p>
-        </div>
+        <?php
+        $es_icon    = 'fa-solid fa-users';
+        $es_title   = 'No alumni found';
+        $es_message = 'Try another search keyword.';
+        include '../include/empty_state.php';
+        ?>
     <?php else: ?>
         <section class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <?php foreach ($users as $row): ?>
@@ -205,7 +204,8 @@ if ($yearResult) {
                     <img
                         src="<?= e($image) ?>"
                         alt="<?= e($row["name"]) ?>"
-                        class="mx-auto h-24 w-24 rounded-full border-4 border-cyan-50 object-cover shadow"
+                        class="mx-auto h-24 w-24 rounded-full border-4 border-cyan-50 object-cover shadow cursor-zoom-in"
+                        onclick="openLightbox(this.src, '<?= e($row['name']) ?>')"
                     >
 
                     <h3 class="mt-4 text-lg font-black text-slate-900">
@@ -243,17 +243,17 @@ if ($yearResult) {
 
                     <div class="mt-4 grid grid-cols-2 gap-2">
                         <?php if ($phone): ?>
-                            <a href="tel:<?= e($phone) ?>" class="rounded-2xl bg-slate-50 px-3 py-2 text-xs font-black text-slate-600 hover:bg-cyan-50">
+                            <a href="tel:<?= e($phone) ?>" class="btn btn-ghost btn-sm btn-block">
                                 <i class="fa-solid fa-phone mr-1"></i> Call
                             </a>
                         <?php else: ?>
-                            <button class="rounded-2xl bg-slate-50 px-3 py-2 text-xs font-black text-slate-300" disabled>
+                            <button class="btn btn-ghost btn-sm btn-block" disabled>
                                 <i class="fa-solid fa-phone mr-1"></i> Call
                             </button>
                         <?php endif; ?>
                         
                         <?php if ($email): ?>
-                            <a href="mailto:<?= e($email) ?>" class="rounded-2xl bg-slate-50 px-3 py-2 text-xs font-black text-slate-600 hover:bg-cyan-50">
+                            <a href="mailto:<?= e($email) ?>" class="btn btn-ghost btn-sm btn-block">
                                 <i class="fa-solid fa-envelope mr-1"></i> Email
                             </a>
                         <?php endif; ?>
@@ -261,9 +261,9 @@ if ($yearResult) {
 
                     <a
                         href="user_profile.php?id=<?= e($row["id"]) ?>"
-                        class="mt-4 block rounded-2xl bg-gradient-to-r from-cyan-400 to-teal-500 px-5 py-3 text-sm font-black text-white shadow"
+                        class="btn btn-primary btn-block mt-4"
                     >
-                        Profile View
+                        <i class="fa-solid fa-user"></i> Profile View
                     </a>
                 </div>
             <?php endforeach; ?>

@@ -2,6 +2,7 @@
 session_start();
 // session_start();
 require_once "../config/db.php";
+require_once "../include/request_guard.php";
 
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
@@ -15,6 +16,7 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 $user_id = (int) $_SESSION["user_id"];
+$current_user_name = $_SESSION["user_name"] ?? "User";
 $message = "";
 $messageType = "";
 
@@ -35,7 +37,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $phone = trim($_POST["phone"] ?? "");
         $address = trim($_POST["address"] ?? "");
         $bio = trim($_POST["bio"] ?? "");
-        $skills = trim($_POST["skills"] ?? "");
 
         $profile_image_path = "";
 
@@ -59,12 +60,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         if ($messageType !== "error") {
-            if ($profile_image_path !== "") {
-                $stmt = $conn->prepare("UPDATE users SET name=?, phone=?, address=?, bio=?, skills=?, profile_image=?, updated_at=NOW() WHERE id=?");
-                $stmt->bind_param("ssssssi", $name, $phone, $address, $bio, $skills, $profile_image_path, $user_id);
+            if (request_guard_is_duplicate('profile_personal', [
+                'user_id' => $user_id,
+                'name' => $name,
+                'phone' => $phone,
+                'address' => $address,
+                'bio' => $bio,
+                'profile_image' => !empty($_FILES["profile_image"]["name"]) ? basename($_FILES["profile_image"]["name"]) : '',
+            ])) {
+                $message = "Please wait and submit the changes only once.";
+                $messageType = "error";
             } else {
-                $stmt = $conn->prepare("UPDATE users SET name=?, phone=?, address=?, bio=?, skills=?, updated_at=NOW() WHERE id=?");
-                $stmt->bind_param("sssssi", $name, $phone, $address, $bio, $skills, $user_id);
+            if ($profile_image_path !== "") {
+                $stmt = $conn->prepare("UPDATE users SET name=?, phone=?, address=?, bio=?, profile_image=?, updated_at=NOW() WHERE id=?");
+                $stmt->bind_param("sssssi", $name, $phone, $address, $bio, $profile_image_path, $user_id);
+            } else {
+                $stmt = $conn->prepare("UPDATE users SET name=?, phone=?, address=?, bio=?, updated_at=NOW() WHERE id=?");
+                $stmt->bind_param("ssssi", $name, $phone, $address, $bio, $user_id);
             }
 
             if ($stmt->execute()) {
@@ -73,6 +85,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             } else {
                 $message = "Failed to update personal information.";
                 $messageType = "error";
+            }
             }
         }
     }
@@ -89,6 +102,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $viber = trim($_POST["viber"] ?? "");
         $whatsapp = trim($_POST["whatsapp"] ?? "");
 
+        if (request_guard_is_duplicate('profile_social', [
+            'user_id' => $user_id,
+            'facebook' => $facebook,
+            'linkedin' => $linkedin,
+            'github' => $github,
+            'telegram' => $telegram,
+            'instagram' => $instagram,
+            'youtube' => $youtube,
+            'tiktok' => $tiktok,
+            'line_id' => $line_id,
+            'viber' => $viber,
+            'whatsapp' => $whatsapp,
+        ])) {
+            $message = "Please wait and submit the changes only once.";
+            $messageType = "error";
+        } else {
+
         $stmt = $conn->prepare("UPDATE users SET facebook=?, linkedin=?, github=?, telegram=?, instagram=?, youtube=?, tiktok=?, line_id=?, viber=?, whatsapp=?, updated_at=NOW() WHERE id=?");
         $stmt->bind_param("ssssssssssi", $facebook, $linkedin, $github, $telegram, $instagram, $youtube, $tiktok, $line_id, $viber, $whatsapp, $user_id);
 
@@ -98,6 +128,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         } else {
             $message = "Failed to update social links.";
             $messageType = "error";
+        }
         }
     }
 
@@ -120,6 +151,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $message = "Position and Company are required.";
             $messageType = "error";
         } else {
+            if (request_guard_is_duplicate('profile_experience', [
+                'user_id' => $user_id,
+                'job_id' => $job_id,
+                'position' => $position,
+                'company' => $company,
+                'job_type' => $job_type,
+                'location' => $location,
+                'salary' => $salary,
+                'experience_year' => $experience_year,
+                'start_date' => $start_date,
+                'end_date' => $end_date,
+                'job_phone' => $job_phone,
+                'job_email' => $job_email,
+                'website' => $website,
+                'description' => $description,
+            ])) {
+                $message = "Please wait and submit the experience only once.";
+                $messageType = "error";
+            } else {
             if ($job_id > 0) {
                 $stmt = $conn->prepare("
                     UPDATE jobs
@@ -170,15 +220,42 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($stmt->execute()) {
                 $message = "Experience saved successfully.";
                 $messageType = "success";
+
+                if ($job_id === 0) {
+                    admin_log_activity(
+                        $conn,
+                        'Add Job',
+                        'Added job entry for ' . $current_user_name . ' at ' . $company,
+                        'job',
+                        (int) $conn->insert_id
+                    );
+
+                    push_notification_to_users(
+                        $conn,
+                        'job',
+                        'New Job Update',
+                        $company . ' posted by ' . $current_user_name,
+                        'job.php'
+                    );
+                }
             } else {
                 $message = "Failed to save experience.";
                 $messageType = "error";
+            }
             }
         }
     }
 
     if ($action === "delete_experience") {
         $job_id = (int)($_POST["job_id"] ?? 0);
+
+        if (request_guard_is_duplicate('profile_delete_experience_' . $job_id, [
+            'user_id' => $user_id,
+            'job_id' => $job_id,
+        ])) {
+            $message = "Please wait and submit the delete only once.";
+            $messageType = "error";
+        } else {
 
         $stmt = $conn->prepare("DELETE FROM jobs WHERE id=? AND user_id=?");
         $stmt->bind_param("ii", $job_id, $user_id);
@@ -189,6 +266,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         } else {
             $message = "Failed to delete experience.";
             $messageType = "error";
+        }
         }
     }
 }
@@ -319,10 +397,6 @@ $jobs = $jobStmt->get_result()->fetch_all(MYSQLI_ASSOC);
                     <textarea name="bio" id="field-bio" rows="5" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold"><?= e($user["bio"] ?? "") ?></textarea>
                 </div>
 
-                <div>
-                    <label class="mb-1 block text-xs font-black uppercase text-slate-400">Skills & Other Info</label>
-                    <textarea name="skills" id="field-skills" rows="3" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold"><?= e($user["skills"] ?? "") ?></textarea>
-                </div>
             </div>
         </form>
     </div>
@@ -337,9 +411,13 @@ $jobs = $jobStmt->get_result()->fetch_all(MYSQLI_ASSOC);
             </div>
 
             <?php if (empty($jobs)): ?>
-                <div class="rounded-2xl bg-slate-50 p-6 text-center text-sm font-semibold text-slate-500">
-                    No work experience added yet.
-                </div>
+                <?php
+                $es_icon    = 'fa-solid fa-briefcase';
+                $es_title   = 'No work experience yet';
+                $es_message = 'Add your work history to boost your profile completion.';
+                $es_action  = '';
+                include '../include/empty_state.php';
+                ?>
             <?php else: ?>
                 <div class="grid gap-4 md:grid-cols-2">
                     <?php foreach ($jobs as $job): ?>
@@ -349,7 +427,8 @@ $jobs = $jobStmt->get_result()->fetch_all(MYSQLI_ASSOC);
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
 
-                                <form method="POST" onsubmit="return confirm('Delete this experience?');">
+                                    <form id="delJob-<?= e($job["id"]) ?>" method="POST" data-no-auto-lock="true"
+                                        onsubmit="event.preventDefault(); confirmDialog('Delete this experience?', function(){ document.getElementById('delJob-<?= e($job['id']) ?>').submit(); }, {title:'Delete Experience', confirmText:'Delete'});">
                                     <input type="hidden" name="action" value="delete_experience">
                                     <input type="hidden" name="job_id" value="<?= e($job["id"]) ?>">
                                     <button type="submit" class="h-8 w-8 rounded-full border bg-white text-red-500">
@@ -486,13 +565,6 @@ $jobs = $jobStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 </div>
 
 <script>
-const menuBtn = document.getElementById("menuBtn");
-const mobileMenu = document.getElementById("mobileMenu");
-
-menuBtn?.addEventListener("click", () => {
-    mobileMenu.classList.toggle("hidden");
-});
-
 let activeTab = "personal";
 
 function switchTab(targetTab) {
@@ -601,17 +673,16 @@ window.addEventListener("DOMContentLoaded", () => {
     const raw = window.location.hash.replace("#", "");
     if (!raw) return;
 
-    const fieldToSection = {
-        profile_image: "personal",
-        name: "personal",
-        bio: "personal",
-        graduated_year: "personal",
-        phone: "personal",
-        address: "personal",
-        skills: "personal",
-        experience: "experience",
-        social: "social"
-    };
+        const fieldToSection = {
+            profile_image: "personal",
+            name: "personal",
+            bio: "personal",
+            graduated_year: "personal",
+            phone: "personal",
+            address: "personal",
+            experience: "experience",
+            social: "social"
+        };
 
     if (raw.startsWith("field-")) {
         const field = raw.substring(6);

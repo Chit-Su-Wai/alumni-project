@@ -14,6 +14,23 @@ require_once "../config/db.php";
 
 $id = (int)($_GET['id'] ?? 0);
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reply_message'])) {
+    $replyMessage = trim($_POST['reply_message'] ?? '');
+    if ($replyMessage !== '') {
+        $replyStmt = $conn->prepare("
+            UPDATE contact_messages
+            SET is_read = 1, replied_at = NOW(), reply_message = ?, reply_admin_id = ?
+            WHERE id = ?
+        ");
+        $replyAdminId = (int) $_SESSION['user_id'];
+        $replyStmt->bind_param('sii', $replyMessage, $replyAdminId, $id);
+        $replyStmt->execute();
+    }
+
+    header("Location: view_contact.php?id=" . $id);
+    exit;
+}
+
 /* Mark As Read */
 
 $update = $conn->prepare("
@@ -78,29 +95,20 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
         <!-- Header -->
 
-        <div class="flex items-center justify-between mb-6">
+        <div class="admin-page-head">
 
-            <div>
-
-                <h1 class="text-3xl font-bold text-teal-700">
-
-                    Contact Message
-
-                </h1>
-
-                <p class="text-slate-500 mt-1">
-
-                    View full contact message
-
-                </p>
-
+            <div class="title-wrap">
+                <div class="admin-title-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
+                <div>
+                    <h1 class="admin-page-title">Contact Message</h1>
+                    <p class="admin-page-sub">View full contact message</p>
+                </div>
             </div>
 
             <a href="contacts.php"
-               class="rounded-xl bg-slate-200
-               px-5 py-3 font-semibold">
+               class="btn btn-ghost">
 
-                Back
+                <i class="fa-solid fa-arrow-left mr-1"></i> Back
 
             </a>
 
@@ -108,7 +116,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
         <!-- Card -->
 
-        <div class="bg-white rounded-3xl shadow overflow-hidden">
+<div class="admin-card">
 
             <div class="p-6 border-b">
 
@@ -120,9 +128,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
                     </h2>
 
-                    <span
-                    class="bg-green-100 text-green-600
-                    px-3 py-1 rounded-full text-xs">
+                    <span class="badge badge-green">
 
                         Read
 
@@ -149,6 +155,42 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
                         <?= htmlspecialchars($message['name']) ?>
 
                     </p>
+
+                </div>
+
+                <div>
+
+                    <label class="block text-sm text-slate-500">
+
+                        Reply Note
+
+                    </label>
+
+                    <form method="POST" class="mt-2 space-y-3">
+
+                        <textarea name="reply_message" rows="4" class="input-base" placeholder="Add a short reply note..."><?= htmlspecialchars($message['reply_message'] ?? '') ?></textarea>
+
+                        <div class="flex items-center gap-3">
+
+                            <button type="submit" class="btn btn-primary btn-sm">
+
+                                <i class="fa-solid fa-reply mr-1"></i> Mark Replied
+
+                            </button>
+
+                            <?php if (!empty($message['replied_at'])): ?>
+
+                                <span class="badge badge-green">Replied</span>
+
+                            <?php else: ?>
+
+                                <span class="badge badge-slate">Not Replied</span>
+
+                            <?php endif; ?>
+
+                        </div>
+
+                    </form>
 
                 </div>
 
@@ -228,4 +270,3 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
 </body>
 </html>
-

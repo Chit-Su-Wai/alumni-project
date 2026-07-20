@@ -100,6 +100,131 @@ while($row = $result->fetch_assoc()) {
     $postData[] = $row;
 
 }
+
+$activityLimit = 8;
+$activityPage = max(1, (int) ($_GET['activity_page'] ?? 1));
+$activityOffset = ($activityPage - 1) * $activityLimit;
+$activityTotal = (int) ($conn->query("SELECT COUNT(*) total FROM activity_log")->fetch_assoc()['total'] ?? 0);
+$activityTotalPages = max(1, (int) ceil($activityTotal / $activityLimit));
+
+$activityStmt = $conn->prepare("
+    SELECT a.id, a.action, a.description, a.created_at, u.name AS admin_name
+    FROM activity_log a
+    LEFT JOIN users u ON u.id = a.admin_id
+    ORDER BY a.created_at DESC, a.id DESC
+    LIMIT ?, ?
+");
+$activityStmt->bind_param('ii', $activityOffset, $activityLimit);
+$activityStmt->execute();
+$activityRows = $activityStmt->get_result();
+
+function report_sql_value(mysqli $conn, $value): string
+{
+    if ($value === null) {
+        return 'NULL';
+    }
+
+    return "'" . $conn->real_escape_string((string) $value) . "'";
+}
+
+function report_backup_sql(mysqli $conn): string
+{
+    $sql = "-- Alumni Network database backup\nSET FOREIGN_KEY_CHECKS=0;\n\n";
+
+    $tables = [];
+    $tablesResult = $conn->query("SHOW TABLES");
+    while ($tableRow = $tablesResult->fetch_array()) {
+        $tables[] = $tableRow[0];
+    }
+
+    foreach ($tables as $table) {
+        $createRow = $conn->query("SHOW CREATE TABLE `{$table}`")->fetch_assoc();
+        $sql .= "DROP TABLE IF EXISTS `{$table}`;\n";
+        $sql .= $createRow['Create Table'] . ";\n\n";
+
+        $rows = $conn->query("SELECT * FROM `{$table}`");
+        if ($rows && $rows->num_rows > 0) {
+            while ($row = $rows->fetch_assoc()) {
+                $columns = [];
+                foreach (array_keys($row) as $column) {
+                    $columns[] = '`' . $column . '`';
+                }
+                $values = [];
+                foreach ($row as $value) {
+                    $values[] = report_sql_value($conn, $value);
+                }
+
+                $sql .= "INSERT INTO `{$table}` (" . implode(',', $columns) . ") VALUES (" . implode(',', $values) . ");\n";
+            }
+            $sql .= "\n";
+        }
+    }
+
+    $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
+    return $sql;
+}
+
+if (isset($_POST['restore_database'])) {
+    $restoreMessage = 'No file uploaded.';
+    $restoreOk = false;
+
+    if (!empty($_FILES['restore_file']['name']) && $_FILES['restore_file']['error'] === UPLOAD_ERR_OK) {
+        $sql = file_get_contents($_FILES['restore_file']['tmp_name']);
+        if ($sql !== false && trim($sql) !== '') {
+            $sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql);
+            if ($conn->multi_query($sql)) {
+                do {
+                    if ($result = $conn->store_result()) {
+                        $result->free();
+                    }
+                } while ($conn->more_results() && $conn->next_result());
+                $restoreOk = true;
+                $restoreMessage = 'Database restored successfully.';
+            } else {
+                $restoreMessage = 'Restore failed: ' . $conn->error;
+            }
+        } else {
+            $restoreMessage = 'Selected file is empty.';
+        }
+    }
+
+    header('Location: report.php?restore=' . ($restoreOk ? 'success' : 'error') . '&message=' . urlencode($restoreMessage));
+    exit;
+}
+
+if (($_GET['export'] ?? '') === 'excel') {
+    header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+    header('Content-Disposition: attachment; filename="alumni_report_' . date('Y-m-d') . '.xls"');
+    echo '<table border="1">';
+    echo '<tr><th>Report Item</th><th>Value</th></tr>';
+    echo '<tr><td>Total Alumni</td><td>' . (int) $totalAlumni . '</td></tr>';
+    echo '<tr><td>Total Jobs</td><td>' . (int) $totalJobs . '</td></tr>';
+    echo '<tr><td>Total Posts</td><td>' . (int) $totalPosts . '</td></tr>';
+    echo '<tr><td>Total Messages</td><td>' . (int) $totalMessages . '</td></tr>';
+    echo '<tr><td>Read Messages</td><td>' . (int) $readMsg . '</td></tr>';
+    echo '<tr><td>Unread Messages</td><td>' . (int) $unreadMsg . '</td></tr>';
+    echo '<tr><td colspan="2">&nbsp;</td></tr>';
+    echo '<tr><th>Graduation Year</th><th>Alumni</th></tr>';
+    foreach ($alumniData as $item) {
+        echo '<tr><td>' . htmlspecialchars((string) $item['graduated_year']) . '</td><td>' . (int) $item['total'] . '</td></tr>';
+    }
+    echo '<tr><td colspan="2">&nbsp;</td></tr>';
+    echo '<tr><th>Month</th><th>Posts</th></tr>';
+    foreach ($postData as $item) {
+        $monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        $monthName = $monthNames[(int) $item['month'] - 1] ?? '';
+        echo '<tr><td>' . htmlspecialchars($monthName) . '</td><td>' . (int) $item['total'] . '</td></tr>';
+    }
+    echo '</table>';
+    exit;
+}
+
+if (($_GET['backup'] ?? '') === '1') {
+    header('Content-Type: application/sql; charset=utf-8');
+    header('Content-Disposition: attachment; filename="alumni_backup_' . date('Y-m-d_His') . '.sql"');
+    echo report_backup_sql($conn);
+    exit;
+}
 ?>
 
 
@@ -134,15 +259,38 @@ while($row = $result->fetch_assoc()) {
     <main class="flex-1 min-w-0 p-6 overflow-y-auto">
 
         <!-- Header -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 print-hide">
-            <div>
-                <h1 class="text-3xl font-black text-teal-700">Reports</h1>
-                <p class="text-sm text-slate-500 mt-1">Analytics and statistics overview</p>
+        <div class="admin-page-head print-hide">
+            <div class="title-wrap">
+                <div class="admin-title-icon"><i class="fa-solid fa-chart-bar"></i></div>
+                <div>
+                    <h1 class="admin-page-title">Reports</h1>
+                    <p class="admin-page-sub">Analytics and statistics overview</p>
+                </div>
             </div>
-            <button onclick="window.print()" class="no-print flex items-center gap-2 bg-gradient-to-r from-cyan-400 to-teal-500 text-white px-5 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition">
-                <i class="fa-solid fa-print"></i> Print Report
-            </button>
+            <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="window.print()" type="button" class="btn btn-secondary no-print">
+                    <i class="fa-solid fa-file-pdf"></i> Export PDF
+                </button>
+                <a href="?export=excel" class="btn btn-success no-print">
+                    <i class="fa-solid fa-file-excel"></i> Export Excel
+                </a>
+                <a href="?backup=1" class="btn btn-ghost no-print">
+                    <i class="fa-solid fa-database"></i> Backup Database
+                </a>
+                <form method="POST" enctype="multipart/form-data" class="no-print flex items-center gap-2">
+                    <input type="file" name="restore_file" accept=".sql" class="input-base w-44 text-xs">
+                    <button type="submit" name="restore_database" class="btn btn-primary">
+                        <i class="fa-solid fa-upload"></i> Restore
+                    </button>
+                </form>
+            </div>
         </div>
+
+        <?php if (!empty($_GET['message'])): ?>
+            <div class="mb-4 rounded-xl px-4 py-3 text-sm <?= (($_GET['restore'] ?? '') === 'success') ? 'bg-teal-50 text-teal-700 border border-teal-100' : 'bg-red-50 text-red-700 border border-red-100' ?>">
+                <?= htmlspecialchars($_GET['message']) ?>
+            </div>
+        <?php endif; ?>
 
         <!-- Print Only Title -->
         <div class="print-report mb-6">
@@ -150,54 +298,34 @@ while($row = $result->fetch_assoc()) {
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="admin-stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
 
-            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 hover:shadow-md transition">
-                <div class="flex items-center gap-4">
-                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-cyan-500 text-white shadow-lg shadow-cyan-200">
-                        <i class="fa-solid fa-users text-lg"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Total Alumni</p>
-                        <h2 class="text-2xl font-black text-slate-800"><?= $totalAlumni ?></h2>
-                    </div>
-                </div>
+            <div class="print-card admin-stat">
+                <span class="stat-spark"></span>
+                <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                <div class="stat-value"><?= $totalAlumni ?></div>
+                <div class="stat-label">Total Alumni</div>
             </div>
 
-            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 hover:shadow-md transition">
-                <div class="flex items-center gap-4">
-                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-400 to-teal-500 text-white shadow-lg shadow-teal-200">
-                        <i class="fa-solid fa-briefcase text-lg"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Total Jobs</p>
-                        <h2 class="text-2xl font-black text-slate-800"><?= $totalJobs ?></h2>
-                    </div>
-                </div>
+            <div class="print-card admin-stat">
+                <span class="stat-spark"></span>
+                <div class="stat-icon"><i class="fa-solid fa-briefcase"></i></div>
+                <div class="stat-value"><?= $totalJobs ?></div>
+                <div class="stat-label">Total Jobs</div>
             </div>
 
-            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 hover:shadow-md transition">
-                <div class="flex items-center gap-4">
-                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-teal-400 text-white shadow-lg shadow-cyan-200">
-                        <i class="fa-regular fa-newspaper text-lg"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Total Posts</p>
-                        <h2 class="text-2xl font-black text-slate-800"><?= $totalPosts ?></h2>
-                    </div>
-                </div>
+            <div class="print-card admin-stat">
+                <span class="stat-spark"></span>
+                <div class="stat-icon"><i class="fa-regular fa-newspaper"></i></div>
+                <div class="stat-value"><?= $totalPosts ?></div>
+                <div class="stat-label">Total Posts</div>
             </div>
 
-            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 hover:shadow-md transition">
-                <div class="flex items-center gap-4">
-                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg shadow-emerald-200">
-                        <i class="fa-regular fa-envelope text-lg"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Messages</p>
-                        <h2 class="text-2xl font-black text-slate-800"><?= $totalMessages ?></h2>
-                    </div>
-                </div>
+            <div class="print-card admin-stat">
+                <span class="stat-spark"></span>
+                <div class="stat-icon"><i class="fa-regular fa-envelope"></i></div>
+                <div class="stat-value"><?= $totalMessages ?></div>
+                <div class="stat-label">Messages</div>
             </div>
 
         </div>
@@ -206,57 +334,125 @@ while($row = $result->fetch_assoc()) {
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
             <!-- Alumni By Graduation Year -->
-            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 print-chart">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-100 text-cyan-600">
-                        <i class="fa-solid fa-graduation-cap text-sm"></i>
-                    </div>
-                    <h2 class="font-bold text-lg text-slate-800">Alumni By Graduation Year</h2>
+            <div class="print-card admin-card admin-fade print-chart">
+                <div class="admin-card-head">
+                    <div class="admin-card-title"><i class="fa-solid fa-graduation-cap fa-icon-chip"></i> <span>Alumni By Graduation Year</span></div>
                 </div>
-                <div class="relative h-64 w-full">
-                    <canvas id="alumniChart"></canvas>
+                <div class="p-5">
+                    <div class="relative h-64 w-full">
+                        <canvas id="alumniChart"></canvas>
+                    </div>
                 </div>
             </div>
 
             <!-- Jobs By Type -->
-            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 print-chart">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-600">
-                        <i class="fa-solid fa-chart-pie text-sm"></i>
-                    </div>
-                    <h2 class="font-bold text-lg text-slate-800">Jobs By Type</h2>
+            <div class="print-card admin-card admin-fade print-chart">
+                <div class="admin-card-head">
+                    <div class="admin-card-title"><i class="fa-solid fa-chart-pie fa-icon-chip"></i> <span>Jobs By Type</span></div>
                 </div>
-                <div class="relative h-64 w-full">
-                    <canvas id="jobChart"></canvas>
+                <div class="p-5">
+                    <div class="relative h-64 w-full">
+                        <canvas id="jobChart"></canvas>
+                    </div>
                 </div>
             </div>
 
             <!-- Posts By Month -->
-            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 print-chart">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-100 text-cyan-600">
-                        <i class="fa-solid fa-chart-column text-sm"></i>
-                    </div>
-                    <h2 class="font-bold text-lg text-slate-800">Posts By Month</h2>
+            <div class="print-card admin-card admin-fade print-chart">
+                <div class="admin-card-head">
+                    <div class="admin-card-title"><i class="fa-solid fa-chart-column fa-icon-chip"></i> <span>Posts By Month</span></div>
                 </div>
-                <div class="relative h-64 w-full">
-                    <canvas id="postChart"></canvas>
+                <div class="p-5">
+                    <div class="relative h-64 w-full">
+                        <canvas id="postChart"></canvas>
+                    </div>
                 </div>
             </div>
 
             <!-- Messages Status -->
-            <div class="print-card bg-white rounded-2xl p-5 shadow-sm border border-cyan-50 print-chart">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
-                        <i class="fa-solid fa-envelope-open text-sm"></i>
-                    </div>
-                    <h2 class="font-bold text-lg text-slate-800">Messages Status</h2>
+            <div class="print-card admin-card admin-fade print-chart">
+                <div class="admin-card-head">
+                    <div class="admin-card-title"><i class="fa-solid fa-envelope-open fa-icon-chip"></i> <span>Messages Status</span></div>
                 </div>
-                <div class="relative h-64 w-full">
-                    <canvas id="messageChart"></canvas>
+                <div class="p-5">
+                    <div class="relative h-64 w-full">
+                        <canvas id="messageChart"></canvas>
+                    </div>
                 </div>
             </div>
 
+        </div>
+
+        <div class="admin-card admin-fade mt-5">
+            <div class="admin-card-head">
+                <div class="admin-card-title"><i class="fa-solid fa-clock-rotate-left fa-icon-chip"></i> <span>Activity Log</span></div>
+                <span class="admin-card-link"><?= (int) $activityTotal ?> Entries</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="admin-table data-table w-full table-fixed">
+                    <thead>
+                        <tr>
+                            <th class="w-40 p-2 text-left">Action</th>
+                            <th class="w-1/2 p-2 text-left">Description</th>
+                            <th class="w-36 p-2 text-left">Admin</th>
+                            <th class="w-32 p-2 text-left">Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if ($activityRows && $activityRows->num_rows > 0): ?>
+                            <?php while ($activity = $activityRows->fetch_assoc()): ?>
+                                <tr>
+                                    <td class="p-2 align-middle">
+                                        <?php
+                                        $activityAction = strtolower((string) $activity['action']);
+                                        $actionClass = 'badge-cyan';
+                                        if (strpos($activityAction, 'delete') !== false) {
+                                            $actionClass = 'badge-red';
+                                        } elseif (strpos($activityAction, 'approve') !== false || strpos($activityAction, 'add') !== false) {
+                                            $actionClass = 'badge-green';
+                                        }
+                                        ?>
+                                        <span class="badge <?= $actionClass ?>"><?= htmlspecialchars($activity['action']) ?></span>
+                                    </td>
+                                    <td class="p-2 align-middle truncate"><?= htmlspecialchars($activity['description'] ?: '-') ?></td>
+                                    <td class="p-2 align-middle truncate"><?= htmlspecialchars($activity['admin_name'] ?: 'Admin') ?></td>
+                                    <td class="p-2 align-middle whitespace-nowrap"><?= date('M d, Y h:i A', strtotime($activity['created_at'])) ?></td>
+                                </tr>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="4" class="p-4 text-sm text-slate-500">No activity recorded yet.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <?php if ($activityTotal > 0): ?>
+                <div class="mt-4 flex flex-col items-center gap-2 pb-4">
+                    <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                        <span>Showing <strong class="text-slate-700"><?= $activityOffset + 1 ?>&ndash;<?= min($activityOffset + $activityLimit, $activityTotal) ?></strong> of <strong class="text-slate-700"><?= $activityTotal ?></strong></span>
+                    </div>
+                    <div class="pagination">
+                        <?php if ($activityPage > 1): ?>
+                            <a href="?activity_page=<?= $activityPage - 1 ?>"><i class="fa-solid fa-chevron-left text-xs"></i> Previous</a>
+                        <?php else: ?>
+                            <span class="disabled"><i class="fa-solid fa-chevron-left text-xs"></i> Previous</span>
+                        <?php endif; ?>
+
+                        <?php $activityStart = max(1, $activityPage - 2); $activityEnd = min($activityTotalPages, $activityPage + 2); ?>
+                        <?php for ($i = $activityStart; $i <= $activityEnd; $i++): ?>
+                            <a href="?activity_page=<?= $i ?>" class="<?= $activityPage == $i ? 'active' : '' ?>"><?= $i ?></a>
+                        <?php endfor; ?>
+
+                        <?php if ($activityPage < $activityTotalPages): ?>
+                            <a href="?activity_page=<?= $activityPage + 1 ?>">Next <i class="fa-solid fa-chevron-right text-xs"></i></a>
+                        <?php else: ?>
+                            <span class="disabled">Next <i class="fa-solid fa-chevron-right text-xs"></i></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
 
     </main>

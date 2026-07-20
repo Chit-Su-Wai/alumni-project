@@ -12,4 +12,7 @@ if ($conn->connect_error) {
   die("Connection failed: " . $conn->connect_error);
 }
 //echo "Connected successfully";
+
+require_once __DIR__ . '/../include/admin_helpers.php';
+ensure_admin_schema($conn);
 ?>

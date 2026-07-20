@@ -13,43 +13,83 @@ require_once "../config/db.php";
 
 /* Add Student */
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $approved_id = trim($_POST['approved_id']);
-    $student_name = trim($_POST['student_name']);
-    $roll_number = trim($_POST['roll_number']);
+    $approved_id   = trim($_POST['approved_id']);
+    $student_name  = trim($_POST['student_name']);
+    $roll_number   = trim($_POST['roll_number']);
     $graduated_year = trim($_POST['graduated_year']);
 
     if (
-        !empty($approved_id) &&
-        !empty($student_name) &&
-        !empty($roll_number) &&
-        !empty($graduated_year)
+        empty($approved_id) ||
+        empty($student_name) ||
+        empty($roll_number) ||
+        empty($graduated_year)
     ) {
 
-        $stmt = $conn->prepare("
-        INSERT INTO approved_students
-        (
-            approved_id,
-            student_name,
-            roll_number,
-            graduated_year
-        )
-        VALUES
-        (
-            ?, ?, ?, ?
-        )
+        $_SESSION['error'] = "Please fill in all fields.";
+
+    } else {
+
+        // Check duplicate first
+        $check = $conn->prepare("
+            SELECT approved_id
+            FROM approved_students
+            WHERE approved_id = ?
         ");
 
-        $stmt->bind_param(
-            "issi",
-            $approved_id,
-            $student_name,
-            $roll_number,
-            $graduated_year
-        );
+        $check->bind_param("s", $approved_id);
+        $check->execute();
+        $check->store_result();
 
-        $stmt->execute();
+        if ($check->num_rows > 0) {
+
+            $_SESSION['error'] = "Approved ID already exists.";
+
+        } else {
+
+            $stmt = $conn->prepare("
+                INSERT INTO approved_students
+                (
+                    approved_id,
+                    student_name,
+                    roll_number,
+                    graduated_year
+                )
+                VALUES
+                (?, ?, ?, ?)
+            ");
+
+            $stmt->bind_param(
+                "sssi",
+                $approved_id,
+                $student_name,
+                $roll_number,
+                $graduated_year
+            );
+
+            if ($stmt->execute()) {
+
+                admin_log_activity(
+                    $conn,
+                    'Approve Student',
+                    'Approved student ' . $student_name . ' (' . $approved_id . ')',
+                    'student',
+                    $approved_id
+                );
+
+                $_SESSION['success'] = "Student added successfully.";
+
+            } else {
+
+                $_SESSION['error'] = "Unable to add student.";
+
+            }
+
+            $stmt->close();
+        }
+
+        $check->close();
     }
 
     header("Location: approved_ids.php");
@@ -60,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 if (isset($_GET['delete'])) {
 
-    $approved_id = (int) $_GET['delete'];
+    $approved_id = (string) $_GET['delete'];
 
     $stmt = $conn->prepare("
     DELETE FROM approved_students
@@ -68,11 +108,19 @@ if (isset($_GET['delete'])) {
     ");
 
     $stmt->bind_param(
-        "i",
+        "s",
         $approved_id
     );
 
     $stmt->execute();
+
+    admin_log_activity(
+        $conn,
+        'Delete Approved Student',
+        'Deleted approved student ID ' . $approved_id,
+        'student',
+        $approved_id
+    );
 
     header("Location: approved_ids.php");
     exit;
@@ -139,27 +187,26 @@ $students = $stmt->get_result();
 <body class="bg-slate-50">
     <div class="flex min-h-screen">
         <?php include "../include/admin_header.php"; ?>
-        <div class="flex-1 p-6 flex flex-col min-h-screen">
+        <div class="flex-1 p-4 flex flex-col min-h-screen">
 
-            <div class="flex items-center justify-between mb-6">
+            <div class="admin-page-head">
 
-                <h1 class="text-3xl font-bold text-teal-700">
-                    Approved Students
-                </h1>
+                <div class="title-wrap">
+                    <div class="admin-title-icon"><i class="fa-solid fa-id-card"></i></div>
+                    <div>
+                        <h1 class="admin-page-title">Approved Students</h1>
+                        <p class="admin-page-sub">Manage the approved student registry</p>
+                    </div>
+                </div>
 
             </div>
 
             <!-- Total -->
-            <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 rounded-xl shadow-sm p-3 mb-6 w-[300px]">
-
-                <p class="text-sm text-slate-500">
-                    Total Approved Students
-                </p>
-
-                <h2 class="text-2xl font-bold text-teal-700 mt-1">
-                    <?= $totalStudents ?>
-                </h2>
-
+            <div class="admin-stat w-[220px] mb-4">
+                <span class="stat-spark"></span>
+                <div class="stat-icon"><i class="fa-solid fa-id-card"></i></div>
+                <div class="stat-value"><?= $totalStudents ?></div>
+                <div class="stat-label">Total Approved Students</div>
             </div>
             <!-- <div class="bg-white rounded-3xl p-6 shadow mb-6">
 
@@ -173,34 +220,37 @@ $students = $stmt->get_result();
         </h2>
 
     </div> -->
+<?php if (isset($_SESSION['error'])): ?>
+<div class="mb-3 max-w-sm rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+    <i class="fa-solid fa-circle-exclamation mr-1"></i>
+    <?= htmlspecialchars($_SESSION['error']) ?>
+</div>
+<?php unset($_SESSION['error']); endif; ?>
 
+<?php if (isset($_SESSION['success'])): ?>
+<div class="mb-3 max-w-sm rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-600">
+    <i class="fa-solid fa-circle-check mr-1"></i>
+    <?= htmlspecialchars($_SESSION['success']) ?>
+</div>
+<?php unset($_SESSION['success']); endif; ?>
             <!-- Add Form -->
-            <div class="bg-white rounded-xl shadow-sm p-3 mb-4 max-w-2xl">
+            <div class="admin-card p-3 mb-4 max-w-lg">
 
                 <form method="POST" class="grid md:grid-cols-2 gap-2">
 
                     <input type="number" name="approved_id" required placeholder="Approved ID"
-                        class="border rounded-lg px-3 py-2 text-sm">
+                        class="input-base">
 
                     <input type="text" name="student_name" required placeholder="Student Name"
-                        class="border rounded-lg px-3 py-2 text-sm">
+                        class="input-base">
 
                     <input type="text" name="roll_number" required placeholder="Roll Number"
-                        class="border rounded-lg px-3 py-2 text-sm">
+                        class="input-base">
 
                     <input type="number" name="graduated_year" required placeholder="Graduated Year"
-                        class="border rounded-lg px-3 py-2 text-sm">
+                        class="input-base">
 
-                    <!-- <button
-            type="submit"
-            class="md:col-span-2 rounded-lg bg-gradient-to-r from-cyan-400 to-teal-500 px-4 py-2 text-sm font-medium text-white hover:opacity-90">
-
-            Add Student
-
-        </button> -->
-                    <button type="submit" class="rounded-lg bg-gradient-to-r from-cyan-400 to-teal-500
-           px-3 py-1.5 text-xs font-medium text-white
-           w-fit hover:opacity-90">
+                    <button type="submit" class="btn btn-primary btn-sm w-fit">
 
                         Add Student
 
@@ -258,11 +308,12 @@ $students = $stmt->get_result();
 
             <!-- Students List -->
 
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 flex-1 content-start">
+            <?php if ($totalStudents > 0): ?>
+            <div class="admin-stagger grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 flex-1 content-start">
 
                 <?php while ($row = $students->fetch_assoc()): ?>
 
-                    <div class="bg-white rounded-xl border border-slate-100 p-4 shadow-sm min-h-[200px] flex flex-col">
+                    <div class="admin-card p-4 min-h-[140px] flex flex-col">
 
                         <div class="flex h-full flex-col justify-between gap-4">
 
@@ -300,8 +351,8 @@ $students = $stmt->get_result();
                             <div class="mt-auto">
 
                                 <a href="?delete=<?= $row['approved_id'] ?>"
-                                    onclick="return confirm('Delete this student?')"
-                                    class="inline-block rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white">
+                                    onclick="event.preventDefault(); confirmDialog('Delete this student?', function(){ window.location.href='?delete=<?= $row['approved_id'] ?>'; }, {title:'Delete Student', confirmText:'Delete'})"
+                                    class="btn btn-danger btn-sm">
 
                                     Delete
 
@@ -316,11 +367,20 @@ $students = $stmt->get_result();
                 <?php endwhile; ?>
 
             </div>
+            <?php else: ?>
+            <?php
+            $es_icon    = 'fa-solid fa-id-card';
+            $es_title   = 'No approved students';
+            $es_message = 'There are no approved student records to display yet.';
+            $es_action  = '';
+            include '../include/empty_state.php';
+            ?>
+            <?php endif; ?>
 
             <!-- Pagination -->
 
             <?php if ($totalStudents > 0): ?>
-            <div class="mt-8 flex flex-col items-center gap-3 pb-4">
+            <div class="mt-4 flex flex-col items-center gap-2 pb-4">
 
                 <!-- Info Row -->
                 <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-sm text-slate-500">
@@ -330,22 +390,19 @@ $students = $stmt->get_result();
                         of
                         <strong class="text-slate-700"><?= $totalStudents ?></strong>
                     </span>
-                   
+
                 </div>
 
                 <!-- Controls Row -->
-                <div class="flex items-center gap-2">
+                <div class="pagination">
 
                     <!-- Previous -->
                     <?php if ($page > 1): ?>
-                        <a href="?page=<?= $page - 1 ?>"
-                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
+                        <a href="?page=<?= $page - 1 ?>">
                             <i class="fa-solid fa-chevron-left text-xs"></i> Previous
                         </a>
                     <?php else: ?>
-                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
-                            <i class="fa-solid fa-chevron-left text-xs"></i> Previous
-                        </span>
+                        <span class="disabled"><i class="fa-solid fa-chevron-left text-xs"></i> Previous</span>
                     <?php endif; ?>
 
                     <!-- Page Numbers -->
@@ -354,7 +411,7 @@ $students = $stmt->get_result();
                         $endPage   = min($totalPages, $page + 2);
                     ?>
                     <?php if ($startPage > 1): ?>
-                        <a href="?page=1" class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">1</a>
+                        <a href="?page=1">1</a>
                         <?php if ($startPage > 2): ?>
                             <span class="px-1 text-slate-400">&hellip;</span>
                         <?php endif; ?>
@@ -362,10 +419,7 @@ $students = $stmt->get_result();
 
                     <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
                         <a href="?page=<?= $i ?>"
-                           class="px-3 py-2 rounded-xl text-sm font-medium transition
-                           <?= $page == $i
-                               ? 'bg-cyan-500 text-white shadow-md shadow-cyan-200'
-                               : 'bg-white shadow text-slate-600 hover:bg-cyan-50 hover:text-cyan-700' ?>">
+                            class="<?= $page == $i ? 'active' : '' ?>">
                             <?= $i ?>
                         </a>
                     <?php endfor; ?>
@@ -374,19 +428,16 @@ $students = $stmt->get_result();
                         <?php if ($endPage < $totalPages - 1): ?>
                             <span class="px-1 text-slate-400">&hellip;</span>
                         <?php endif; ?>
-                        <a href="?page=<?= $totalPages ?>" class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition"><?= $totalPages ?></a>
+                        <a href="?page=<?= $totalPages ?>"><?= $totalPages ?></a>
                     <?php endif; ?>
 
                     <!-- Next -->
                     <?php if ($page < $totalPages): ?>
-                        <a href="?page=<?= $page + 1 ?>"
-                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
+                        <a href="?page=<?= $page + 1 ?>">
                             Next <i class="fa-solid fa-chevron-right text-xs"></i>
                         </a>
                     <?php else: ?>
-                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
-                            Next <i class="fa-solid fa-chevron-right text-xs"></i>
-                        </span>
+                        <span class="disabled">Next <i class="fa-solid fa-chevron-right text-xs"></i></span>
                     <?php endif; ?>
 
                 </div>

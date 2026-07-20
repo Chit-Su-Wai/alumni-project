@@ -1,5 +1,6 @@
 <?php
 require_once "../config/db.php";
+require_once "../include/auth_layout.php";
 
 $currentYear = date("Y");
 
@@ -19,67 +20,17 @@ $recentPosts = $conn->query("
 ");
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alumni Network</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-</head>
+<?php auth_layout_head('Alumni Network'); ?>
 
-<body class="min-h-screen text-slate-800 bg-gradient-to-br from-white via-cyan-50 to-teal-50">
-
-<!-- DECORATIVE BACKGROUND ELEMENTS -->
-<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-    <div class="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-teal-200/20 blur-3xl"></div>
-    <div class="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-cyan-200/20 blur-3xl"></div>
-</div>
-
-<!-- NAVBAR -->
-<header class="sticky top-0 z-50 px-4 py-4">
-    <nav class="mx-auto flex max-w-6xl items-center justify-between rounded-2xl px-5 py-3 shadow-lg backdrop-blur-xl bg-white/80 border border-cyan-100">
-        <a href="homepage.php" class="flex items-center gap-3 group">
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 text-white font-black shadow-sm transition group-hover:shadow-md group-hover:scale-105">
-                AN
-            </div>
-            <span class="font-bold text-teal-700" data-t="alumni_network">Alumni Network</span>
-        </a>
-
-        <div class="hidden items-center gap-2 md:flex">
-
-            <button onclick="toggleTheme()"
-                class="theme-toggle flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-100 bg-white text-sm shadow-sm hover:bg-cyan-50 hover:shadow-md transition-all">
-
-                <i class="fa-solid fa-moon"></i>
-
-            </button>
-
-            <a href="register.php" class="rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 px-4 py-2 text-sm font-bold text-white shadow-md hover:shadow-lg hover:scale-105 transition-all" data-t="register">Register</a>
-            <a href="login.php" class="rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 px-4 py-2 text-sm font-bold text-white shadow-md hover:shadow-lg hover:scale-105 transition-all" data-t="login">Login</a>
-        </div>
-
-        <button id="menuBtn" class="md:hidden rounded-xl bg-cyan-50 px-3 py-2 text-teal-700 font-bold hover:bg-cyan-100 transition">☰</button>
-    </nav>
-
-    <div id="mobileMenu" class="mx-auto mt-3 hidden max-w-6xl rounded-2xl border border-cyan-100 bg-white/95 p-4 shadow-lg md:hidden">
-        <div class="grid gap-3 text-sm font-semibold">
-
-            <button onclick="toggleTheme()" class="theme-toggle flex items-center justify-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm font-semibold text-teal-700 hover:bg-cyan-50 transition">
-
-                <i class="fa-solid fa-moon"></i> <span>Theme</span>
-
-            </button>
-
-            <a href="register.php" class="rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 px-4 py-2 text-center text-sm font-bold text-white shadow-sm" data-t="register">Register</a>
-            <a href="login.php" class="rounded-xl bg-white border border-cyan-100 px-4 py-2 text-center text-sm font-bold text-teal-700" data-t="login">Login</a>
-        </div>
-    </div>
-</header>
+<?php
+$navVariant = 'home';
+$navShowHome = false;
+$navShowRegister = true;
+$navShowLogin = true;
+include "../include/public_nav.php";
+?>
 
 <main>
-
 
 <!-- HERO -->
 <section class="mx-auto max-w-6xl px-4">
@@ -219,83 +170,80 @@ $recentPosts = $conn->query("
 
 <!-- RECENT POSTS -->
 <section class="mx-auto max-w-6xl px-4 py-16">
-    <div class="mx-auto max-w-6xl px-4">
-        <div class="mb-8 flex items-end justify-between">
-            <div>
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-teal-500/20 px-4 py-1.5 text-xs font-bold text-teal-700 border border-cyan-100">
-                    <i class="fa-solid fa-clock-rotate-left text-[10px] text-teal-500"></i>
-                    Community
-                </span>
-                <h2 class="mt-4 text-3xl font-black text-teal-800" data-t="recent_alumni_posts">Recent Alumni Posts</h2>
-                <p class="mt-2 text-sm text-slate-500" data-t="posts_desc">Latest updates from the alumni community.</p>
-            </div>
-            <a href="login.php" class="hidden items-center gap-1.5 rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 px-4 py-2 text-sm font-bold text-white shadow-md hover:shadow-lg hover:scale-105 transition-all sm:inline-flex" data-t="view_all">
-                View All <i class="fa-solid fa-arrow-right text-xs"></i>
-            </a>
+    <div class="mb-8 flex items-end justify-between">
+        <div>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-teal-500/20 px-4 py-1.5 text-xs font-bold text-teal-700 border border-cyan-100">
+                <i class="fa-solid fa-clock-rotate-left text-[10px] text-teal-500"></i>
+                Community
+            </span>
+            <h2 class="mt-4 text-3xl font-black text-teal-800" data-t="recent_alumni_posts">Recent Alumni Posts</h2>
+            <p class="mt-2 text-sm text-slate-500" data-t="posts_desc">Latest updates from the alumni community.</p>
         </div>
+        <a href="login.php" class="hidden items-center gap-1.5 rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 px-4 py-2 text-sm font-bold text-white shadow-md hover:shadow-lg hover:scale-105 transition-all sm:inline-flex" data-t="view_all">
+            View All <i class="fa-solid fa-arrow-right text-xs"></i>
+        </a>
+    </div>
 
-        <?php if ($recentPosts && $recentPosts->num_rows > 0): ?>
-            <div class="grid gap-6 md:grid-cols-3">
-                <?php while ($post = $recentPosts->fetch_assoc()): ?>
-                    <?php
-                        // Check for main image first
-                        $displayImage = $post['image'];
-                        
-                        // If no main image, try to get the first image from post_images table
-                        if (empty($displayImage)) {
-                            $imgStmt = $conn->prepare("SELECT image FROM post_images WHERE post_id = ? LIMIT 1");
-                            $imgStmt->bind_param("i", $post['id']);
-                            $imgStmt->execute();
-                            $imgRes = $imgStmt->get_result();
-                            if ($imgRes->num_rows > 0) {
-                                $displayImage = $imgRes->fetch_assoc()['image'];
-                            }
+    <?php if ($recentPosts && $recentPosts->num_rows > 0): ?>
+        <div class="grid gap-6 md:grid-cols-3">
+            <?php while ($post = $recentPosts->fetch_assoc()): ?>
+                <?php
+                    $displayImage = $post['image'];
+
+                    if (empty($displayImage)) {
+                        $imgStmt = $conn->prepare("SELECT image FROM post_images WHERE post_id = ? LIMIT 1");
+                        $imgStmt->bind_param("i", $post['id']);
+                        $imgStmt->execute();
+                        $imgRes = $imgStmt->get_result();
+                        if ($imgRes->num_rows > 0) {
+                            $displayImage = $imgRes->fetch_assoc()['image'];
                         }
-                    ?>
-                    <article class="group overflow-hidden rounded-2xl border border-cyan-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
+                    }
+                ?>
+                <article class="group overflow-hidden rounded-2xl border border-cyan-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
 
-                        <?php if (!empty($displayImage)): ?>
-                            <div class="overflow-hidden">
-                                <img src="<?= htmlspecialchars($displayImage) ?>" alt="Post image" class="h-44 w-full object-cover transition duration-500 group-hover:scale-105">
-                            </div>
-                        <?php else: ?>
-                            <div class="h-44 w-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center">
-                                <i class="fa-regular fa-newspaper text-4xl text-white/50"></i>
-                            </div>
-                        <?php endif; ?>
+                    <?php if (!empty($displayImage)): ?>
+                        <div class="overflow-hidden">
+                            <img src="<?= htmlspecialchars($displayImage) ?>" alt="Post image" class="h-44 w-full object-cover transition duration-500 group-hover:scale-105">
+                        </div>
+                    <?php else: ?>
+                        <div class="flex h-44 w-full items-center justify-center bg-gradient-to-br from-cyan-400 to-teal-500">
+                            <i class="fa-regular fa-newspaper text-4xl text-white/50"></i>
+                        </div>
+                    <?php endif; ?>
 
-                        <div class="p-5">
-                            <div class="mb-3 flex items-center gap-3">
-                                <img src="<?= !empty($post['profile_image']) ? htmlspecialchars($post['profile_image']) : '../images/default-avatar.svg' ?>"
-                                    class="h-10 w-10 rounded-full object-cover border-2 border-cyan-100 shadow-sm">
-                                <div>
-                                    <h3 class="font-bold text-sm text-slate-800"><?= htmlspecialchars($post['name']) ?></h3>
-                                    <p class="text-xs text-slate-400 flex items-center gap-1">
-                                        <i class="fa-regular fa-calendar text-[10px]"></i>
-                                        <?= date("M d, Y", strtotime($post['created_at'])) ?>
-                                    </p>
-                                </div>
-                            </div>
-                            <p class="text-sm leading-6 text-slate-600 line-clamp-3">
-                                <?= htmlspecialchars(substr($post['content'], 0, 120)) ?><?= strlen($post['content']) > 120 ? '...' : '' ?>
-                            </p>
-                            <div class="mt-4">
-                                <a href="login.php" class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-600 hover:text-teal-700 transition" data-t="read_more">
-                                    Read More <i class="fa-solid fa-arrow-right text-[10px]"></i>
-                                </a>
+                    <div class="p-5">
+                        <div class="mb-3 flex items-center gap-3">
+                            <img src="<?= !empty($post['profile_image']) ? htmlspecialchars($post['profile_image']) : '../images/default-avatar.svg' ?>"
+                                class="h-10 w-10 rounded-full object-cover border-2 border-cyan-100 shadow-sm">
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-800"><?= htmlspecialchars($post['name']) ?></h3>
+                                <p class="flex items-center gap-1 text-xs text-slate-400">
+                                    <i class="fa-regular fa-calendar text-[10px]"></i>
+                                    <?= date("M d, Y", strtotime($post['created_at'])) ?>
+                                </p>
                             </div>
                         </div>
-                    </article>
-                <?php endwhile; ?>
+                        <p class="text-sm leading-6 text-slate-600 line-clamp-3">
+                            <?= htmlspecialchars(substr($post['content'], 0, 120)) ?><?= strlen($post['content']) > 120 ? '...' : '' ?>
+                        </p>
+                        <div class="mt-4">
+                            <a href="login.php" class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-600 transition hover:text-teal-700" data-t="read_more">
+                                Read More <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            <?php endwhile; ?>
+        </div>
+    <?php else: ?>
+        <div class="rounded-2xl border border-cyan-100 bg-white py-12 text-center shadow-sm">
+            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-50">
+                <i class="fa-regular fa-newspaper text-2xl text-slate-300"></i>
             </div>
-        <?php else: ?>
-            <div class="text-center py-12 bg-white rounded-2xl border border-cyan-100 shadow-sm">
-                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-50">
-                    <i class="fa-regular fa-newspaper text-2xl text-slate-300"></i>
-                </div>
-                <p class="text-slate-400 text-sm" data-t="no_posts_yet">No posts yet. Be the first to share!</p>
-            </div>
-        <?php endif; ?>
+            <p class="text-sm text-slate-400" data-t="no_posts_yet">No posts yet. Be the first to share!</p>
+        </div>
+    <?php endif; ?>
     </div>
 </section>
 
@@ -337,9 +285,10 @@ $recentPosts = $conn->query("
         <!-- Image -->
         <div class="overflow-hidden rounded-xl">
             <img
-                src="images/alumni.jpg"
+                src="../images/alumni.jpg"
                 alt="Alumni"
-                class="h-56 w-full rounded-xl object-cover transition duration-500 hover:scale-105 md:h-72"
+                class="h-56 w-full cursor-zoom-in rounded-xl object-cover transition duration-500 hover:scale-105 md:h-72"
+                onclick="openLightbox(this.src,'Our Alumni Community')"
             >
         </div>
 
@@ -411,7 +360,6 @@ $recentPosts = $conn->query("
 <!-- FOOTER -->
 <footer class="mx-auto mt-10 mb-4 max-w-6xl px-4">
     <div class="rounded-2xl border border-cyan-100 bg-white px-6 py-5 shadow-sm">
-
         <div class="flex flex-col items-center justify-between gap-3 text-center text-sm text-slate-700 md:flex-row">
 
             <div class="font-semibold">
@@ -433,23 +381,5 @@ $recentPosts = $conn->query("
     </div>
 </footer>
 
-<script>
-    var menuBtn = document.getElementById("menuBtn");
-    var mobileMenu = document.getElementById("mobileMenu");
-
-    if (menuBtn && mobileMenu) {
-        menuBtn.addEventListener("click", function () {
-            mobileMenu.classList.toggle("hidden");
-        });
-    }
-</script>
-
-<link rel="stylesheet" href="../include/theme.css">
-<script src="../include/theme.js"></script>
-
-<!-- Language system: inject window.LANG then apply translations -->
-<script src="../lang/lang.php"></script>
-<script src="../include/translations.js"></script>
-
-</body>
-</html>
+<?php include "../include/ui_components.php"; ?>
+<?php auth_layout_scripts(); ?>

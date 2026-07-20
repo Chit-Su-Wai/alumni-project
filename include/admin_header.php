@@ -19,12 +19,13 @@ if (!empty($_SESSION['user_id'])) {
 }
 ?>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="../include/admin.css">
 <style>
 /* 
   Since the parent dashboard wraps this in <div class="flex min-h-screen">
   we must force flex-col on mobile so the topbar sits above the main content,
   and flex-row on desktop so the sidebar sits beside it.
-*/
+ */
 @media (max-width: 767px) {
     body > .flex {
         flex-direction: column !important;
@@ -34,7 +35,7 @@ if (!empty($_SESSION['user_id'])) {
 
 <!-- Mobile Header (Hidden on Desktop) -->
 <!-- Mobile Header -->
-<div class="flex md:hidden items-center justify-between bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 border-b border-cyan-200 p-4 w-full sticky top-0 z-10">
+<div class="admin-topbar flex md:hidden items-center justify-between p-4 w-full sticky top-0 z-10">
 
     <div class="flex items-center gap-3">
 
@@ -45,7 +46,7 @@ if (!empty($_SESSION['user_id'])) {
         </button>
 
         <!-- Logo -->
-        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 to-teal-500 font-black text-white">
+        <div class="brand-logo flex h-10 w-10 items-center justify-center rounded-2xl font-black text-white">
             AN
         </div>
 
@@ -57,9 +58,6 @@ if (!empty($_SESSION['user_id'])) {
         </div>
 
     </div>
-
-    <!-- Theme -->
-    
 
 </div>
 <div id="sidebarOverlay"
@@ -86,9 +84,9 @@ md:flex md:flex-col">
         </button>
     </div>
 
-    <div class="hidden md:flex p-6 border-b border-cyan-200 items-center justify-between">
+    <div class="hidden md:flex p-6 border-b border-cyan-100 items-center justify-between">
         <a href="dashboard.php" class="flex items-center gap-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 to-teal-500 font-black text-white">
+            <div class="brand-logo flex h-11 w-11 items-center justify-center rounded-2xl font-black text-white">
                 AN
             </div>
             <div>
@@ -99,67 +97,67 @@ md:flex md:flex-col">
 
     </div>
 
-    <nav class="flex flex-col flex-1 p-4">
+    <nav class="flex flex-col flex-1 p-4 overflow-y-auto">
     <div class="space-y-1">
 
-        <a href="dashboard.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
-            <i class="fa-solid fa-gauge-high w-5 text-center text-teal-600"></i>
+        <a href="dashboard.php" class="admin-nav-link">
+            <i class="fa-solid fa-gauge-high"></i>
             <span data-t="dashboard">Dashboard</span>
         </a>
 
-        <a href="profile.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
-            <i class="fa-solid fa-user-gear w-5 text-center text-teal-600"></i>
+        <a href="profile.php" class="admin-nav-link">
+            <i class="fa-solid fa-user-gear"></i>
             <span>Profile</span>
         </a>
 
-        <a href="users.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
-            <i class="fa-solid fa-users w-5 text-center text-teal-600"></i>
+        <a href="users.php" class="admin-nav-link">
+            <i class="fa-solid fa-users"></i>
             <span data-t="alumni">Alumni</span>
         </a>
 
-        <a href="posts.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
-            <i class="fa-regular fa-newspaper w-5 text-center text-teal-600"></i>
+        <a href="posts.php" class="admin-nav-link">
+            <i class="fa-regular fa-newspaper"></i>
             <span data-t="posts">Posts</span>
         </a>
 
-        <a href="jobs.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
-            <i class="fa-solid fa-briefcase w-5 text-center text-teal-600"></i>
+        <a href="jobs.php" class="admin-nav-link">
+            <i class="fa-solid fa-briefcase"></i>
             <span data-t="jobs">Jobs</span>
         </a>
 
-        <a href="contacts.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
-            <i class="fa-regular fa-envelope w-5 text-center text-teal-600"></i>
+        <a href="contacts.php" class="admin-nav-link">
+            <i class="fa-regular fa-envelope"></i>
             <span data-t="contacts">Contacts</span>
         </a>
 
-        <a href="approved_ids.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
-            <i class="fa-solid fa-id-card w-5 text-center text-teal-600"></i>
+        <a href="approved_ids.php" class="admin-nav-link">
+            <i class="fa-solid fa-id-card"></i>
             <span data-t="approved_ids">Approved IDs</span>
         </a>
 
-        <a href="announcements.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
-            <i class="fa-solid fa-bullhorn w-5 text-center text-teal-600"></i>
+        <a href="announcements.php" class="admin-nav-link">
+            <i class="fa-solid fa-bullhorn"></i>
             <span data-t="announcements">Announcements</span>
         </a>
 
-        <a href="report.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
-    <i class="fa-solid fa-chart-bar w-5 text-center text-teal-600"></i>
-    <span data-t="reports">Reports</span>
-</a>
+        <a href="report.php" class="admin-nav-link">
+            <i class="fa-solid fa-chart-bar"></i>
+            <span data-t="reports">Reports</span>
+        </a>
 
-<button
-    type="button"
-    onclick="toggleTheme()"
-    class="theme-toggle flex items-center gap-3 w-full px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-teal-700 transition">
-    <i class="fa-solid fa-moon w-5 text-center text-teal-600"></i>
-    <span>Dark / Light Mode</span>
-</button>
+        <button
+            type="button"
+            onclick="toggleTheme()"
+            class="admin-nav-link theme-toggle w-full">
+            <i class="fa-solid fa-moon"></i>
+            <span>Dark / Light Mode</span>
+        </button>
     </div>
 
     <!-- Logout Bottom -->
-    <div class="mt-auto pt-4 border-t border-cyan-200">
-        <a href="logout.php" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70 hover:text-red-600 transition">
-            <i class="fa-solid fa-right-from-bracket w-5 text-center text-red-500"></i>
+    <div class="mt-auto pt-4 border-t border-cyan-100">
+        <a href="logout.php" class="admin-nav-link logout-link">
+            <i class="fa-solid fa-right-from-bracket text-red-500"></i>
             <span data-t="logout">Logout</span>
         </a>
     </div>
@@ -228,4 +226,12 @@ if (adminSidebarCloseBtn) {
 }
 
 overlay.addEventListener('click', closeSidebar);
+
+/* Auto-highlight the current page's nav link (premium active state) */
+document.querySelectorAll('#adminSidebar .admin-nav-link').forEach(function (link) {
+    var href = link.getAttribute('href');
+    if (href && !link.classList.contains('theme-toggle') && location.pathname.endsWith(href)) {
+        link.classList.add('active');
+    }
+});
 </script>

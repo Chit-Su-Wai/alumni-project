@@ -7,6 +7,7 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 require_once "../config/db.php";
+require_once "../include/request_guard.php";
 
 if ($_SERVER["REQUEST_METHOD"] != "POST") {
     header("Location: contact.php");
@@ -27,6 +28,17 @@ if (
     empty($message)
 ) {
     header("Location: contact.php");
+    exit;
+}
+
+if (request_guard_is_duplicate('save_contact', [
+    'user_id' => $user_id,
+    'name' => $name,
+    'email' => $email,
+    'subject' => $subject,
+    'message' => $message,
+])) {
+    header("Location: contact.php?success=1");
     exit;
 }
 

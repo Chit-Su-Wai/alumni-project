@@ -1,0 +1,186 @@
+/* Shared auth / public page layout — prevents layout shift between pages */
+
+.auth-bg-decor {
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.auth-main {
+    display: flex;
+    min-height: calc(100vh - 5.5rem);
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 1rem 2rem;
+}
+
+.auth-card {
+    display: grid;
+    width: 100%;
+    max-width: 72rem;
+    min-height: clamp(36rem, 72vh, 40rem);
+    overflow: hidden;
+    border-radius: 2rem;
+    border: 1px solid rgb(207 250 254);
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(8px);
+}
+
+@media (min-width: 1024px) {
+    .auth-card {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.auth-card-hero {
+    position: relative;
+    display: none;
+    min-height: clamp(36rem, 72vh, 40rem);
+}
+
+@media (min-width: 1024px) {
+    .auth-card-hero {
+        display: block;
+    }
+}
+
+.auth-card-hero img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+}
+
+.auth-card-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    min-height: inherit;
+}
+
+@media (min-width: 640px) {
+    .auth-card-body {
+        padding: 2rem 2.5rem;
+    }
+}
+
+.auth-form-wrap {
+    width: 100%;
+    max-width: 28rem;
+}
+
+.auth-form-header {
+    text-align: center;
+}
+
+.auth-form-title {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+    font-weight: 900;
+    color: rgb(15 118 110);
+}
+
+.auth-form-subtitle {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: rgb(100 116 139);
+}
+
+.auth-alert-slot {
+    margin-top: 1.5rem;
+    min-height: 3.75rem;
+}
+
+.auth-form {
+    margin-top: 1.5rem;
+}
+
+.auth-form-space-y-4 > * + * {
+    margin-top: 1rem;
+}
+
+.auth-form-space-y-5 > * + * {
+    margin-top: 1.25rem;
+}
+
+.auth-footer-link {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: rgb(100 116 139);
+}
+
+/* Mobile menu — shared across public pages */
+.mobile-menu-backdrop {
+    display: none;
+    position: fixed;
+    top: 5rem;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 55;
+    background: rgba(15, 23, 42, 0.38);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.mobile-menu-backdrop.active {
+    display: block;
+    opacity: 1;
+}
+
+.mobile-menu-overlay {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 5rem;
+    z-index: 60;
+    width: 100%;
+    max-height: calc(100vh - 5rem);
+    overflow-y: auto;
+    padding-top: 0;
+    margin-top: 0;
+    border-top: none;
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s;
+    pointer-events: none;
+}
+
+.mobile-menu-overlay.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+body.mobile-menu-open {
+    overflow: hidden !important;
+}
+
+.menu-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+
+.menu-btn-icon.is-open {
+    transform: rotate(90deg);
+}
+
+@media (min-width: 768px) {
+    .mobile-menu-overlay.md-hide,
+    .mobile-menu-backdrop.md-hide {
+        display: none !important;
+    }
+}

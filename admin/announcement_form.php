@@ -87,6 +87,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         if ($stmt->execute()) {
+            $savedId = $id > 0 ? $id : (int) $conn->insert_id;
+            admin_log_activity(
+                $conn,
+                $id > 0 ? 'Update Announcement' : 'Add Announcement',
+                ($id > 0 ? 'Updated' : 'Added') . ' announcement: ' . $title,
+                'announcement',
+                $savedId
+            );
+
+            if ($id === 0) {
+                push_notification_to_users(
+                    $conn,
+                    'announcement',
+                    'New Announcement',
+                    $title,
+                    'announcements.php'
+                );
+            }
             header("Location: announcements.php");
             exit;
         } else {
@@ -126,11 +144,17 @@ function v($key)
 
         <div class="flex-1 p-6 flex flex-col">
 
-            <div class="flex items-center justify-between mb-6">
-                <h1 class="text-3xl font-bold text-teal-700">
-                    <?= $id > 0 ? "Edit" : "New" ?> Announcement / Event
-                </h1>
-                <a href="announcements.php" class="text-sm text-slate-500 hover:text-teal-700">
+            <div class="admin-page-head">
+                <div class="title-wrap">
+                    <div class="admin-title-icon"><i class="fa-solid fa-bullhorn"></i></div>
+                    <div>
+                        <h1 class="admin-page-title">
+                            <?= $id > 0 ? "Edit" : "New" ?> Announcement / Event
+                        </h1>
+                        <p class="admin-page-sub">Create or update announcements and events</p>
+                    </div>
+                </div>
+                <a href="announcements.php" class="text-sm text-slate-500 hover:text-teal-700 no-print">
                     <i class="fa-solid fa-arrow-left mr-1"></i> Back
                 </a>
             </div>
@@ -142,68 +166,75 @@ function v($key)
             <?php endif; ?>
 
             <form method="POST" enctype="multipart/form-data"
-                class="bg-white rounded-2xl shadow p-6 max-w-2xl space-y-5">
+                class="admin-form-card max-w-2xl space-y-5">
+
+                <h3 class="form-section-title"><i class="fa-solid fa-circle-info"></i> Details</h3>
 
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Type</label>
+                    <label class="ui-label">Type</label>
                     <select name="type"
-                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300">
+                        class="input-base">
                         <option value="announcement" <?= v('type') === 'announcement' || v('type') === '' ? 'selected' : '' ?>>Announcement</option>
                         <option value="event" <?= v('type') === 'event' ? 'selected' : '' ?>>Event</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Title <span class="text-red-500">*</span></label>
+                    <label class="ui-label">Title <span class="text-red-500">*</span></label>
                     <input type="text" name="title" required value="<?= htmlspecialchars(v('title')) ?>"
-                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300"
+                        class="input-base"
                         placeholder="Enter title">
                 </div>
 
                 <div class="grid sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Date</label>
+                        <label class="ui-label">Date</label>
                         <input type="date" name="event_date" value="<?= htmlspecialchars(v('event_date')) ?>"
-                            class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300">
+                            class="input-base">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Time</label>
+                        <label class="ui-label">Time</label>
                         <input type="time" name="event_time" value="<?= htmlspecialchars(v('event_time')) ?>"
-                            class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300">
+                            class="input-base">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Location</label>
+                    <label class="ui-label">Location</label>
                     <input type="text" name="location" value="<?= htmlspecialchars(v('location')) ?>"
-                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300"
+                        class="input-base"
                         placeholder="e.g. Main Hall, Campus">
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Image</label>
-                    <?php if (!empty($edit['image'])): ?>
-                        <img src="<?= htmlspecialchars($edit['image']) ?>" alt="current"
-                            class="h-32 w-48 object-cover rounded-xl mb-2 border">
-                    <?php endif; ?>
-                    <input type="file" name="image" accept="image/*"
-                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300">
-                </div>
+                <h3 class="form-section-title pt-2"><i class="fa-solid fa-image"></i> Media</h3>
 
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Description</label>
+                    <label class="ui-label">Image</label>
+                    <?php if (!empty($edit['image'])): ?>
+                        <img src="<?= htmlspecialchars($edit['image']) ?>" alt="current"
+                            class="h-32 w-48 object-cover rounded-xl mb-2 border-2 border-cyan-100 shadow-sm cursor-zoom-in"
+                            onclick="openLightbox(this.src, 'Current image')">
+                    <?php endif; ?>
+                    <input type="file" name="image" accept="image/*"
+                        class="input-base">
+                </div>
+
+                <h3 class="form-section-title pt-2"><i class="fa-solid fa-align-left"></i> Content</h3>
+
+                <div>
+                    <label class="ui-label">Description</label>
                     <textarea name="description" rows="5"
-                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300"
+                        class="input-base"
                         placeholder="Write details here..."><?= htmlspecialchars(v('description')) ?></textarea>
                 </div>
 
                 <div class="flex gap-3">
                     <button type="submit"
-                        class="rounded-xl bg-teal-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-teal-700 transition">
+                        class="btn btn-primary">
                         <i class="fa-solid fa-save mr-1"></i> Save
                     </button>
                     <a href="announcements.php"
-                        class="rounded-xl bg-slate-100 px-6 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 transition">
+                        class="btn btn-ghost">
                         Cancel
                     </a>
                 </div>

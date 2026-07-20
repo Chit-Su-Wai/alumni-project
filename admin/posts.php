@@ -17,6 +17,11 @@ if (isset($_GET['delete'])) {
 
     $post_id = (int) $_GET['delete'];
 
+    $metaStmt = $conn->prepare("SELECT content FROM posts WHERE id = ? LIMIT 1");
+    $metaStmt->bind_param("i", $post_id);
+    $metaStmt->execute();
+    $metaRow = $metaStmt->get_result()->fetch_assoc();
+
     $stmt = $conn->prepare("
         DELETE FROM posts
         WHERE id = ?
@@ -24,6 +29,14 @@ if (isset($_GET['delete'])) {
 
     $stmt->bind_param("i", $post_id);
     $stmt->execute();
+
+    admin_log_activity(
+        $conn,
+        'Delete Post',
+        'Deleted post #' . $post_id . (!empty($metaRow['content']) ? ' - ' . substr($metaRow['content'], 0, 60) . (strlen($metaRow['content']) > 60 ? '...' : '') : ''),
+        'post',
+        $post_id
+    );
 
     header("Location: posts.php");
     exit;
@@ -165,58 +178,54 @@ $posts = $stmt->get_result();
     <div class="min-h-screen flex">
         <?php include "../include/admin_header.php"; ?>
 
-        <div class="flex-1 flex flex-col min-h-screen p-6">
+        <div class="flex-1 flex flex-col min-h-screen p-4">
 
             <!-- Header -->
 
-            <div class="flex items-center justify-between mb-6">
+            <div class="admin-page-head">
 
-                <h1 class="text-3xl font-bold text-teal-700">
-                    Posts Management
-                </h1>
+                <div class="title-wrap">
+                    <div class="admin-title-icon"><i class="fa-solid fa-newspaper"></i></div>
+                    <div>
+                        <h1 class="admin-page-title">Posts Management</h1>
+                        <p class="admin-page-sub">Review and moderate alumni posts</p>
+                    </div>
+                </div>
 
+                <form method="GET" class="max-w-[420px] w-full">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" name="search" value="<?= htmlspecialchars($search) ?>"
+                            placeholder="Search post or user..." class="input-base">
+                    </div>
+                </form>
 
             </div>
 
             <!-- Card -->
 
             <!-- Total Posts -->
-            <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 rounded-xl shadow-sm p-2 mb-3 w-[300px]">
-
-                <p class="text-xl text-slate-500">
-                    Total Posts
-                </p>
-
-                <h2 class="text-lg font-bold leading-tight">
-                    <?= $totalPosts ?>
-                </h2>
-
-            </div>
-
-            <!-- Search -->
-            <div class="mb-4 w-[300px]">
-
-                <form method="GET">
-
-                    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>"
-                        placeholder="Search post or user..." class="w-full border rounded-lg px-3 py-2 text-sm">
-
-                </form>
-
+            <div class="admin-stat w-[220px] mb-3">
+                <span class="stat-spark"></span>
+                <div class="stat-icon"><i class="fa-solid fa-newspaper"></i></div>
+                <div class="stat-value"><?= $totalPosts ?></div>
+                <div class="stat-label">Total Posts</div>
             </div>
 
             <!-- Posts Grid -->
 
-            <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4 flex-1 content-start">
+            <?php if ($totalPosts > 0): ?>
+            <div class="admin-stagger grid md:grid-cols-2 xl:grid-cols-3 gap-3 flex-1 content-start">
 
                 <?php while ($post = $posts->fetch_assoc()): ?>
 
-                    <article class="bg-white rounded-2xl shadow p-4">
+                    <article class="admin-card p-4">
 
                         <div class="flex items-start gap-3 mb-3">
 
                             <img src="<?= !empty($post['profile_image']) ? htmlspecialchars($post['profile_image']) : '../images/default-avatar.svg' ?>"
-                                class="h-10 w-10 rounded-full object-cover border border-cyan-100 shrink-0">
+                                class="admin-avatar shrink-0 cursor-zoom-in"
+                                onclick="openLightbox(this.src, '<?= htmlspecialchars($post['name']) ?>')">
 
                             <div class="min-w-0">
                                 <h2 class="font-semibold text-slate-800 truncate">
@@ -242,14 +251,14 @@ $posts = $stmt->get_result();
                         <div class="mt-4 flex flex-wrap gap-2">
 
                             <a href="view_post.php?id=<?= $post['id'] ?>"
-                                class="bg-green-500 text-white px-3 py-1.5 text-sm rounded-lg">
+                                class="btn btn-ghost btn-sm">
 
                                 View
 
                             </a>
 
-                            <a href="?delete=<?= $post['id'] ?>" onclick="return confirm('Delete this post?')"
-                                class="bg-red-500 text-white px-3 py-1.5 text-sm rounded-lg">
+                            <a href="?delete=<?= $post['id'] ?>" onclick="event.preventDefault(); confirmDialog('Delete this post?', function(){ window.location.href='?delete=<?= $post['id'] ?>'; }, {title:'Delete Post', confirmText:'Delete'})"
+                                class="btn btn-danger btn-sm">
 
                                 Delete
 
@@ -262,10 +271,19 @@ $posts = $stmt->get_result();
                 <?php endwhile; ?>
 
             </div>
+            <?php else: ?>
+            <?php
+            $es_icon    = 'fa-regular fa-newspaper';
+            $es_title   = 'No posts yet';
+            $es_message = 'There are no posts to display yet.';
+            $es_action  = '';
+            include '../include/empty_state.php';
+            ?>
+            <?php endif; ?>
 
             <!-- Pagination -->
             <?php if ($totalPosts > 0): ?>
-            <div class="mt-8 flex flex-col items-center gap-3 pb-4">
+            <div class="mt-4 flex flex-col items-center gap-2 pb-4">
 
                 <!-- Info Row -->
                 <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-sm text-slate-500">
@@ -275,24 +293,21 @@ $posts = $stmt->get_result();
                         of
                         <strong class="text-slate-700"><?= $totalPosts ?></strong>
                     </span>
-                    
+
                 </div>
 
                 <!-- Controls Row -->
-                <div class="flex items-center gap-2">
+                <div class="pagination">
 
                     <?php $searchParam = $search ? 'search=' . urlencode($search) . '&' : ''; ?>
 
                     <!-- Previous -->
                     <?php if ($page > 1): ?>
-                        <a href="?<?= $searchParam ?>page=<?= $page - 1 ?>"
-                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
+                        <a href="?<?= $searchParam ?>page=<?= $page - 1 ?>">
                             <i class="fa-solid fa-chevron-left text-xs"></i> Previous
                         </a>
                     <?php else: ?>
-                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
-                            <i class="fa-solid fa-chevron-left text-xs"></i> Previous
-                        </span>
+                        <span class="disabled"><i class="fa-solid fa-chevron-left text-xs"></i> Previous</span>
                     <?php endif; ?>
 
                     <!-- Page Numbers -->
@@ -301,7 +316,7 @@ $posts = $stmt->get_result();
                         $endPage   = min($totalPages, $page + 2);
                     ?>
                     <?php if ($startPage > 1): ?>
-                        <a href="?<?= $searchParam ?>page=1" class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">1</a>
+                        <a href="?<?= $searchParam ?>page=1">1</a>
                         <?php if ($startPage > 2): ?>
                             <span class="px-1 text-slate-400">&hellip;</span>
                         <?php endif; ?>
@@ -309,10 +324,7 @@ $posts = $stmt->get_result();
 
                     <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
                         <a href="?<?= $searchParam ?>page=<?= $i ?>"
-                           class="px-3 py-2 rounded-xl text-sm font-medium transition
-                           <?= $page == $i
-                               ? 'bg-cyan-500 text-white shadow-md shadow-cyan-200'
-                               : 'bg-white shadow text-slate-600 hover:bg-cyan-50 hover:text-cyan-700' ?>">
+                            class="<?= $page == $i ? 'active' : '' ?>">
                             <?= $i ?>
                         </a>
                     <?php endfor; ?>
@@ -321,19 +333,16 @@ $posts = $stmt->get_result();
                         <?php if ($endPage < $totalPages - 1): ?>
                             <span class="px-1 text-slate-400">&hellip;</span>
                         <?php endif; ?>
-                        <a href="?<?= $searchParam ?>page=<?= $totalPages ?>" class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition"><?= $totalPages ?></a>
+                        <a href="?<?= $searchParam ?>page=<?= $totalPages ?>"><?= $totalPages ?></a>
                     <?php endif; ?>
 
                     <!-- Next -->
                     <?php if ($page < $totalPages): ?>
-                        <a href="?<?= $searchParam ?>page=<?= $page + 1 ?>"
-                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
+                        <a href="?<?= $searchParam ?>page=<?= $page + 1 ?>">
                             Next <i class="fa-solid fa-chevron-right text-xs"></i>
                         </a>
                     <?php else: ?>
-                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
-                            Next <i class="fa-solid fa-chevron-right text-xs"></i>
-                        </span>
+                        <span class="disabled">Next <i class="fa-solid fa-chevron-right text-xs"></i></span>
                     <?php endif; ?>
 
                 </div>

@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 require_once "../config/db.php";
+require_once "../include/request_guard.php";
 
 $user_id = $_SESSION['user_id'];
 $post_id = (int)($_POST['post_id'] ?? 0);
@@ -15,6 +16,15 @@ $comment = trim($_POST['comment'] ?? '');
 
 if ($post_id <= 0 || empty($comment)) {
     echo json_encode(["error" => "Invalid data"]);
+    exit;
+}
+
+if (request_guard_is_duplicate('api_comment', [
+    'user_id' => $user_id,
+    'post_id' => $post_id,
+    'comment' => $comment,
+])) {
+    echo json_encode(["error" => "Duplicate comment request"]);
     exit;
 }
 

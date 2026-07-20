@@ -1,0 +1,10 @@
+{
+    "name": "admin/alumni-system",
+    "authors": [
+        {
+            "name": "Chit-Su-Wai",
+            "email": "cwai304@gmail.com"
+        }
+    ],
+    "require": {}
+}

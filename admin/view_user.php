@@ -92,14 +92,17 @@ $posts = $postStmt->get_result();
 
         <div class="max-w-4xl">
 
-            <div class="flex items-center justify-between mb-6">
-
-                <h1 class="text-3xl font-bold text-teal-700">
-                    Alumni Profile
-                </h1>
+            <div class="admin-page-head">
+                <div class="title-wrap">
+                    <div class="admin-title-icon"><i class="fa-solid fa-user-graduate"></i></div>
+                    <div>
+                        <h1 class="admin-page-title">Alumni Profile</h1>
+                        <p class="admin-page-sub">Full alumni details, experience &amp; posts</p>
+                    </div>
+                </div>
 
                 <a href="users.php"
-                   class="rounded-xl bg-slate-200 hover:bg-slate-300 px-4 py-2 text-sm font-semibold transition">
+                   class="btn btn-ghost">
 
                     <i class="fa-solid fa-arrow-left mr-1"></i> Back
 
@@ -109,15 +112,16 @@ $posts = $postStmt->get_result();
 
             <!-- Profile -->
 
-            <div class="bg-white rounded-3xl shadow-sm border border-cyan-50 p-6">
+            <div class="admin-card p-6">
 
                 <div class="flex flex-col md:flex-row gap-6">
 
-                    <img
-                        src="<?= !empty($user['profile_image'])
-                            ? htmlspecialchars($user['profile_image'])
-                            : '../images/default-avatar.svg' ?>"
-                        class="w-28 h-28 rounded-full object-cover border-4 border-cyan-100">
+                        <img
+                            src="<?= !empty($user['profile_image'])
+                                ? htmlspecialchars($user['profile_image'])
+                                : '../images/default-avatar.svg' ?>"
+                            class="w-28 h-28 rounded-full object-cover border-4 border-cyan-100 cursor-zoom-in"
+                            onclick="openLightbox(this.src, '<?= htmlspecialchars($user['name']) ?>')">
 
                     <div>
 
@@ -149,11 +153,15 @@ $posts = $postStmt->get_result();
 
             <!-- Experience -->
 
-            <div class="bg-white rounded-3xl shadow-sm border border-cyan-50 p-6 mt-6">
+            <div class="admin-card mt-6">
 
-                <h2 class="text-lg font-bold mb-4 text-slate-800">
-                    <i class="fa-solid fa-briefcase mr-2 text-teal-600"></i>Experience
-                </h2>
+                <div class="admin-card-head">
+                    <div class="admin-card-title">
+                        <i class="fa-solid fa-briefcase fa-icon-chip"></i>Experience
+                    </div>
+                </div>
+
+                <div class="p-6">
 
                 <?php if ($jobs->num_rows > 0): ?>
                     <?php while($job = $jobs->fetch_assoc()): ?>
@@ -177,18 +185,30 @@ $posts = $postStmt->get_result();
 
                     <?php endwhile; ?>
                 <?php else: ?>
-                    <p class="text-sm text-slate-400">No experience added.</p>
+                        <?php
+                        $es_icon    = 'fa-solid fa-briefcase';
+                        $es_title   = 'No experience yet';
+                        $es_message = 'This alumni has not added any work experience.';
+                        $es_action  = '';
+                        include '../include/empty_state.php';
+                        ?>
                 <?php endif; ?>
+
+                </div>
 
             </div>
 
             <!-- Posts -->
 
-            <div class="bg-white rounded-3xl shadow-sm border border-cyan-50 p-6 mt-6">
+            <div class="admin-card mt-6">
 
-                <h2 class="text-lg font-bold mb-4 text-slate-800">
-                    <i class="fa-regular fa-newspaper mr-2 text-teal-600"></i>Posts
-                </h2>
+                <div class="admin-card-head">
+                    <div class="admin-card-title">
+                        <i class="fa-regular fa-newspaper fa-icon-chip"></i>Posts
+                    </div>
+                </div>
+
+                <div class="p-6">
 
                 <?php if ($posts->num_rows > 0): ?>
                     <?php while($post = $posts->fetch_assoc()): ?>
@@ -208,8 +228,16 @@ $posts = $postStmt->get_result();
 
                     <?php endwhile; ?>
                 <?php else: ?>
-                    <p class="text-sm text-slate-400">No posts yet.</p>
+                        <?php
+                        $es_icon    = 'fa-regular fa-newspaper';
+                        $es_title   = 'No posts yet';
+                        $es_message = 'This alumni has not published any posts.';
+                        $es_action  = '';
+                        include '../include/empty_state.php';
+                        ?>
                 <?php endif; ?>
+
+                </div>
 
             </div>
 

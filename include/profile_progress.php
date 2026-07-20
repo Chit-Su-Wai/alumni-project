@@ -78,12 +78,6 @@ $checklist = [
         'section' => 'social',
         'done'    => $hasSocial
     ],
-    [
-        'label'   => 'Skills & Other Info',
-        'field'   => 'skills',
-        'section' => 'personal',
-        'done'    => !empty(trim((string) ($user['skills'] ?? '')))
-    ],
 ];
 
 $totalFields = count($checklist);
@@ -144,7 +138,7 @@ $isComplete = $percent >= 100;
 
             <?php if ($isComplete): ?>
                 <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm ring-1 ring-emerald-200">
-                    <i class="fa-solid fa-circle-check"></i> Profile Complete ✅
+                    <i class="fa-solid fa-circle-check"></i> Profile Complete
                 </span>
             <?php else: ?>
                 <a href="edit_profile.php"

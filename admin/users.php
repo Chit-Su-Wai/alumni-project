@@ -30,6 +30,14 @@ if (isset($_GET['delete'])) {
     $msgStmt->bind_param("ii", $delete_id, $delete_id);
     $msgStmt->execute();
 
+    admin_log_activity(
+        $conn,
+        'Delete Alumni',
+        'Deleted alumni account #' . $delete_id,
+        'user',
+        $delete_id
+    );
+
     header("Location: users.php");
     exit;
 }
@@ -201,52 +209,48 @@ $users = $stmt->get_result();
     <div class="min-h-screen flex">
         <?php include "../include/admin_header.php"; ?>
 
-        <div class="flex-1 flex flex-col min-h-screen p-6">
+        <div class="flex-1 flex flex-col min-h-screen p-4">
 
             <!-- Header -->
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 print-hide">
-                <h1 class="text-3xl font-bold text-teal-700">
-                    Alumni Management
-                </h1>
-                <div class="flex items-center gap-3">
+            <div class="admin-page-head print-hide">
+                <div class="title-wrap">
+                    <div class="admin-title-icon"><i class="fa-solid fa-users"></i></div>
+                    <div>
+                        <h1 class="admin-page-title">Alumni Management</h1>
+                        <p class="admin-page-sub">View, search and manage all alumni accounts</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <form method="GET" class="max-w-[420px] w-full">
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" name="search" value="<?= htmlspecialchars($search) ?>"
+                                placeholder="Search Alumni..." class="input-base">
+                        </div>
+                    </form>
                     <a href="export_alumni.php?search=<?= urlencode($search) ?>"
-                        class="flex items-center gap-2 bg-gradient-to-r from-emerald-400 to-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-md hover:shadow-lg transition text-sm">
+                        class="btn btn-success">
                         <i class="fa-solid fa-file-excel"></i> Export Excel
                     </a>
-                    <button onclick="window.print()"
-                        class="flex items-center gap-2 bg-gradient-to-r from-cyan-400 to-teal-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-md hover:shadow-lg transition text-sm">
+                    <button onclick="window.print()" type="button"
+                        class="btn btn-secondary">
                         <i class="fa-solid fa-print"></i> Print Report
                     </button>
                 </div>
             </div>
 
-            <!-- Print Only Title -->
-            <div class="print-report mb-4">
-                <h1 class="text-2xl font-black text-slate-800 text-center">Alumni Network System - Alumni List</h1>
-                <p class="text-sm text-slate-500 text-center mt-1">
-                    Generated on <?= date('F d, Y') ?>
-                    <?= $search ? '| Search: "' . htmlspecialchars($search) . '"' : '' ?>
-                </p>
-            </div>
-
-            <!-- Search -->
-            <div class="bg-whit p-3 rounded-2xl mb-4 print-hide">
-                <form method="GET">
-                    <div class="max-w-sm">
-                        <input type="text" name="search" value="<?= htmlspecialchars($search) ?>"
-                            placeholder="Search Alumni..." class="w-full border rounded-lg px-3 py-1.5 text-sm">
-                    </div>
-                </form>
-            </div>
-
             <!-- Table -->
-            <div class="print-card bg-white rounded-xl shadow-sm overflow-hidden flex-1">
+            <div class="print-card admin-card flex-1">
+
+                <div class="admin-card-head">
+                    <div class="admin-card-title"><i class="fa-solid fa-users fa-icon-chip"></i> <span>Alumni Directory</span></div>
+                </div>
 
                 <div class="overflow-x-auto">
 
-                    <table class="print-table w-full table-fixed text-sm">
+                    <table class="admin-table data-table print-table min-w-[1100px] table-auto text-sm whitespace-nowrap">
 
-                        <thead class="bg-cyan-50">
+                                <thead>
 
                             <tr>
 
@@ -304,7 +308,8 @@ $users = $stmt->get_result();
                                     <td class="px-3 py-2.5 align-middle">
                                         <div class="flex items-center gap-2.5 min-w-0">
                                             <img src="<?= !empty($user['profile_image']) ? htmlspecialchars($user['profile_image']) : '../images/default-avatar.svg' ?>"
-                                                class="print-hide h-8 w-8 rounded-full object-cover border border-cyan-100 shrink-0">
+                                                class="admin-avatar print-hide shrink-0 cursor-zoom-in"
+                                                onclick="openLightbox(this.src, '<?= htmlspecialchars($user['name']) ?>')">
                                             <span class="truncate font-medium"><?= htmlspecialchars($user['name']) ?></span>
                                         </div>
                                     </td>
@@ -323,15 +328,15 @@ $users = $stmt->get_result();
                                         <div class="flex gap-2 flex-wrap">
 
                                             <a href="view_user.php?id=<?= $user['id'] ?>"
-                                                class="bg-blue-500 text-white px-2.5 py-1.5 text-xs rounded-lg">
+                                                class="btn btn-ghost btn-sm">
 
                                                 View
 
                                             </a>
 
                                             <a href="?delete=<?= $user['id'] ?>"
-                                                onclick="return confirm('Delete this alumni?')"
-                                                class="bg-red-500 text-white px-2.5 py-1.5 text-xs rounded-lg">
+                                                onclick="event.preventDefault(); confirmDialog('Delete this alumni?', function(){ window.location.href='?delete=<?= $user['id'] ?>'; }, {title:'Delete Alumni', confirmText:'Delete'})"
+                                                class="btn btn-danger btn-sm">
 
                                                 Delete
 
@@ -355,7 +360,7 @@ $users = $stmt->get_result();
 
 <!-- Pagination -->
             <?php if ($totalAlumni > 0): ?>
-            <div class="print-hide mt-8 flex flex-col items-center gap-3 pb-4">
+            <div class="print-hide mt-4 flex flex-col items-center gap-2 pb-4">
                 <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-sm text-slate-500">
                     <span>
                         Showing
@@ -365,16 +370,13 @@ $users = $stmt->get_result();
                     </span>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="pagination">
                     <?php if ($page > 1): ?>
-                        <a href="?page=<?= $page - 1 ?><?= $sortQs ?>&search=<?= urlencode($search) ?>"
-                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
+                        <a href="?page=<?= $page - 1 ?><?= $sortQs ?>&search=<?= urlencode($search) ?>">
                             <i class="fa-solid fa-chevron-left text-xs"></i> Previous
                         </a>
                     <?php else: ?>
-                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
-                            <i class="fa-solid fa-chevron-left text-xs"></i> Previous
-                        </span>
+                        <span class="disabled"><i class="fa-solid fa-chevron-left text-xs"></i> Previous</span>
                     <?php endif; ?>
 
                     <?php
@@ -382,7 +384,7 @@ $users = $stmt->get_result();
                         $endPage   = min($totalPages, $page + 2);
                     ?>
                     <?php if ($startPage > 1): ?>
-                        <a href="?page=1<?= $sortQs ?>&search=<?= urlencode($search) ?>" class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">1</a>
+                        <a href="?page=1<?= $sortQs ?>&search=<?= urlencode($search) ?>">1</a>
                         <?php if ($startPage > 2): ?>
                             <span class="px-1 text-slate-400">&hellip;</span>
                         <?php endif; ?>
@@ -390,10 +392,7 @@ $users = $stmt->get_result();
 
                     <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
                         <a href="?page=<?= $i ?><?= $sortQs ?>&search=<?= urlencode($search) ?>"
-                           class="px-3 py-2 rounded-xl text-sm font-medium transition
-                           <?= $page == $i
-                                ? 'bg-cyan-500 text-white shadow-md shadow-cyan-200'
-                                : 'bg-white shadow text-slate-600 hover:bg-cyan-50 hover:text-cyan-700' ?>">
+                            class="<?= $page == $i ? 'active' : '' ?>">
                             <?= $i ?>
                         </a>
                     <?php endfor; ?>
@@ -402,21 +401,26 @@ $users = $stmt->get_result();
                         <?php if ($endPage < $totalPages - 1): ?>
                             <span class="px-1 text-slate-400">&hellip;</span>
                         <?php endif; ?>
-                        <a href="?page=<?= $totalPages ?><?= $sortQs ?>&search=<?= urlencode($search) ?>" class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition"><?= $totalPages ?></a>
+                        <a href="?page=<?= $totalPages ?><?= $sortQs ?>&search=<?= urlencode($search) ?>"><?= $totalPages ?></a>
                     <?php endif; ?>
 
                     <?php if ($page < $totalPages): ?>
-                        <a href="?page=<?= $page + 1 ?><?= $sortQs ?>&search=<?= urlencode($search) ?>"
-                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
+                        <a href="?page=<?= $page + 1 ?><?= $sortQs ?>&search=<?= urlencode($search) ?>">
                             Next <i class="fa-solid fa-chevron-right text-xs"></i>
                         </a>
                     <?php else: ?>
-                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
-                            Next <i class="fa-solid fa-chevron-right text-xs"></i>
-                        </span>
+                        <span class="disabled">Next <i class="fa-solid fa-chevron-right text-xs"></i></span>
                     <?php endif; ?>
                 </div>
             </div>
+            <?php else: ?>
+            <?php
+            $es_icon    = 'fa-solid fa-users';
+            $es_title   = 'No alumni found';
+            $es_message = 'There are no alumni records to display yet.';
+            $es_action  = '';
+            include '../include/empty_state.php';
+            ?>
             <?php endif; ?>
 
         </div>

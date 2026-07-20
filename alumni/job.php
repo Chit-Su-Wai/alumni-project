@@ -111,15 +111,18 @@ while ($row = $result->fetch_assoc()) {
         <div class="bg-white rounded-3xl p-5 shadow-sm mb-6">
             <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
 
-                <input
-                    type="text"
-                    name="search"
-                    value="<?= e($search) ?>"
-                    placeholder="Search alumni, company, or title"
-                    class="rounded-xl border px-4 py-3"
-                >
+                <div class="search-box">
+                    <i class="fa-solid fa-search"></i>
+                    <input
+                        type="text"
+                        name="search"
+                        value="<?= e($search) ?>"
+                        placeholder="Search alumni, company, or title"
+                        class="input-base"
+                    >
+                </div>
 
-                <select name="position" class="rounded-xl border px-4 py-3">
+                <select name="position" class="input-base">
                     <option value="">All Job Titles</option>
                     <?php
                     $q = mysqli_query($conn, "SELECT DISTINCT position FROM jobs ORDER BY position");
@@ -131,7 +134,7 @@ while ($row = $result->fetch_assoc()) {
                     <?php endwhile; ?>
                 </select>
 
-                <select name="job_type" class="rounded-xl border px-4 py-3">
+                <select name="job_type" class="input-base">
                     <option value="">All Job Types</option>
                     <?php
                     $q = mysqli_query($conn, "SELECT DISTINCT job_type FROM jobs WHERE job_type != '' ORDER BY job_type");
@@ -143,7 +146,7 @@ while ($row = $result->fetch_assoc()) {
                     <?php endwhile; ?>
                 </select>
 
-                <select name="location" class="rounded-xl border px-4 py-3">
+                <select name="location" class="input-base">
                     <option value="">All Locations</option>
                     <?php
                     $q = mysqli_query($conn, "SELECT DISTINCT location FROM jobs ORDER BY location");
@@ -156,11 +159,11 @@ while ($row = $result->fetch_assoc()) {
                 </select>
 
                 <div class="flex gap-2">
-                    <button type="submit" class="w-full bg-cyan-500 text-white rounded-xl font-bold">
-                        Search
+                    <button type="submit" class="btn btn-primary flex-1">
+                        <i class="fa-solid fa-magnifying-glass"></i> Search
                     </button>
 
-                    <a href="job.php" class="w-full bg-slate-200 text-slate-700 rounded-xl font-bold flex items-center justify-center">
+                    <a href="job.php" class="btn btn-ghost flex-1">
                         Clear
                     </a>
                 </div>
@@ -171,9 +174,13 @@ while ($row = $result->fetch_assoc()) {
         <div class="space-y-4">
 
             <?php if (empty($jobGroups)): ?>
-                <div class="bg-white p-6 rounded-xl text-center shadow">
-                    No jobs found
-                </div>
+                <?php
+                $es_icon    = 'fa-solid fa-briefcase';
+                $es_title   = 'No jobs found';
+                $es_message = 'Try adjusting your filters or search keyword.';
+                $es_action  = '<a href="job.php" class="btn btn-primary"><i class="fa-solid fa-rotate-left"></i> Clear Filters</a>';
+                include '../include/empty_state.php';
+                ?>
             <?php endif; ?>
 
             <?php foreach ($jobGroups as $jobTitle => $alumni): ?>
@@ -232,8 +239,8 @@ while ($row = $result->fetch_assoc()) {
                                     </span>
 
                                     <a href="user_profile.php?id=<?= (int) $person['id'] ?>"
-                                       class="rounded-xl bg-cyan-500 px-4 py-2 text-white text-sm font-semibold hover:bg-cyan-600">
-                                        View Profile
+                                       class="btn btn-primary btn-sm">
+                                        <i class="fa-solid fa-user"></i> View Profile
                                     </a>
                                 </div>
                             </div>

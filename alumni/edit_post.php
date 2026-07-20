@@ -8,6 +8,7 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 require_once "../config/db.php";
+require_once "../include/request_guard.php";
 
 $user_id = $_SESSION["user_id"];
 $post_id = (int)($_GET["id"] ?? 0);
@@ -53,12 +54,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     } else {
 
-        $update = $conn->prepare(
-            "UPDATE posts
-             SET content = ?,
-                 category = ?
-             WHERE id = ?"
-        );
+        if (request_guard_is_duplicate('edit_post', [
+            'user_id' => $user_id,
+            'post_id' => $post_id,
+            'content' => $content,
+            'category' => $category,
+            'images' => array_map('basename', $_FILES['images']['name'] ?? []),
+        ])) {
+            $error = "Please wait and submit the changes only once.";
+        } else {
+
+            $update = $conn->prepare(
+                "UPDATE posts
+                 SET content = ?,
+                     category = ?
+                 WHERE id = ?"
+            );
 
         $update->bind_param(
             "ssi",
@@ -67,11 +78,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $post_id
         );
 
-        $update->execute();
+            $update->execute();
 
         /* Upload New Images */
 
-        if (!empty($_FILES['images']['name'][0])) {
+            if (!empty($_FILES['images']['name'][0])) {
 
             $uploadDir = "../uploads/posts/";
 
@@ -123,8 +134,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
 
-        header("Location: feed.php");
-        exit;
+            header("Location: feed.php");
+            exit;
+        }
     }
 }
 ?>
@@ -162,9 +174,9 @@ Edit Post
 
 <a
 href="feed.php"
-class="text-cyan-600 font-semibold">
+class="btn btn-ghost btn-sm">
 
-Back
+<i class="fa-solid fa-arrow-left"></i> Back
 
 </a>
 
@@ -188,13 +200,13 @@ class="space-y-5">
 
 <div>
 
-<label class="block mb-2 font-semibold">
+<label class="ui-label">
 Category
 </label>
 
 <select
 name="category"
-class="w-full rounded-xl border p-3">
+class="input-base">
 
 <option value="General"
 <?= $post['category']=='General' ? 'selected' : '' ?>>
@@ -222,7 +234,7 @@ News
 
 <div>
 
-<label class="block mb-2 font-semibold">
+<label class="ui-label">
 Content
 </label>
 
@@ -230,7 +242,7 @@ Content
 name="content"
 rows="6"
 required
-class="w-full rounded-xl border p-4"><?= htmlspecialchars($post['content']) ?></textarea>
+class="input-base"><?= htmlspecialchars($post['content']) ?></textarea>
 
 </div>
 
@@ -238,7 +250,7 @@ class="w-full rounded-xl border p-4"><?= htmlspecialchars($post['content']) ?></
 
 <div>
 
-<label class="block mb-2 font-semibold">
+<label class="ui-label">
 Current Photos
 </label>
 
@@ -259,7 +271,8 @@ while($img = mysqli_fetch_assoc($imgs)):
 
 <img
 src="<?= $img['image'] ?>"
-class="h-40 w-full rounded-xl object-cover">
+class="h-40 w-full rounded-xl object-cover cursor-zoom-in"
+onclick="openLightbox('<?= htmlspecialchars($img['image'], ENT_QUOTES) ?>', 'Current photo')">
 
 <?php endwhile; ?>
 
@@ -271,7 +284,7 @@ class="h-40 w-full rounded-xl object-cover">
 
 <div>
 
-<label class="block mb-2 font-semibold">
+<label class="ui-label">
 Add More Photos
 </label>
 
@@ -280,15 +293,15 @@ type="file"
 name="images[]"
 multiple
 accept="image/*"
-class="w-full rounded-xl border p-3">
+class="input-base">
 
 </div>
 
 <button
 type="submit"
-class="w-full rounded-xl bg-cyan-500 py-3 font-bold text-white">
+class="btn btn-primary btn-block">
 
-Update Post
+<i class="fa-solid fa-floppy-disk"></i> Update Post
 
 </button>
 

@@ -17,6 +17,11 @@ if (isset($_GET['delete'])) {
 
     $job_id = (int) $_GET['delete'];
 
+    $metaStmt = $conn->prepare("SELECT position, company FROM jobs WHERE id = ? LIMIT 1");
+    $metaStmt->bind_param("i", $job_id);
+    $metaStmt->execute();
+    $metaRow = $metaStmt->get_result()->fetch_assoc();
+
     $stmt = $conn->prepare("
         DELETE FROM jobs
         WHERE id = ?
@@ -24,6 +29,14 @@ if (isset($_GET['delete'])) {
 
     $stmt->bind_param("i", $job_id);
     $stmt->execute();
+
+    admin_log_activity(
+        $conn,
+        'Delete Job',
+        'Deleted job #' . $job_id . (!empty($metaRow['position']) ? ' - ' . $metaRow['position'] : '') . (!empty($metaRow['company']) ? ' at ' . $metaRow['company'] : ''),
+        'job',
+        $job_id
+    );
 
     header("Location: jobs.php");
     exit;
@@ -96,43 +109,44 @@ $jobs = $stmt->get_result();
 
         <?php include "../include/admin_header.php"; ?>
 
-        <div class="flex-1 p-6 flex flex-col">
+        <div class="flex-1 p-4 flex flex-col">
 
             <!-- Header -->
 
-            <div class="flex items-center justify-between mb-6">
+            <div class="admin-page-head">
 
-                <h1 class="text-3xl font-bold text-teal-700">
-                    Jobs Management
-                </h1>
+                <div class="title-wrap">
+                    <div class="admin-title-icon"><i class="fa-solid fa-briefcase"></i></div>
+                    <div>
+                        <h1 class="admin-page-title">Jobs Management</h1>
+                        <p class="admin-page-sub">Browse and manage job listings</p>
+                    </div>
+                </div>
 
             </div>
 
             <!-- Total Jobs -->
 
-            <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 rounded-xl shadow-sm p-3 mb-6 w-[300px]">
-
-                <p class="text-sm text-slate-500">
-                    Total Jobs
-                </p>
-
-                <h2 class="text-2xl font-bold text-teal-700 mt-1">
-                    <?= $totalJobs ?>
-                </h2>
-
+            <div class="admin-stat w-[220px] mb-4">
+                <span class="stat-spark"></span>
+                <div class="stat-icon"><i class="fa-solid fa-briefcase"></i></div>
+                <div class="stat-value"><?= $totalJobs ?></div>
+                <div class="stat-label">Total Jobs</div>
             </div>
 
             <!-- Jobs List -->
 
-            <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4 flex-1 content-start">
+            <?php if ($totalJobs > 0): ?>
+            <div class="admin-stagger grid md:grid-cols-2 xl:grid-cols-3 gap-3 flex-1 content-start">
 
                 <?php while ($job = $jobs->fetch_assoc()): ?>
 
-                    <div class="bg-white rounded-2xl p-4 shadow">
+                    <div class="admin-card p-4">
                         <div class="flex items-start gap-3">
 
                             <img src="<?= !empty($job['profile_image']) ? htmlspecialchars($job['profile_image']) : '../images/default-avatar.svg' ?>"
-                                class="h-10 w-10 rounded-full object-cover border border-cyan-100 shrink-0">
+                                class="admin-avatar shrink-0 cursor-zoom-in"
+                                onclick="openLightbox(this.src, '<?= htmlspecialchars($job['name']) ?>')">
 
                             <div class="min-w-0 flex-1">
 
@@ -146,7 +160,7 @@ $jobs = $stmt->get_result();
 
                             </div>
 
-                            <span class="rounded-full bg-cyan-100 text-cyan-700 px-3 py-1.5 text-xs font-semibold shrink-0">
+                            <span class="badge badge-cyan shrink-0">
                                 <?= htmlspecialchars($job['job_type']) ?>
                             </span>
 
@@ -220,15 +234,15 @@ $jobs = $stmt->get_result();
                         <div class="mt-4 flex flex-wrap gap-2">
 
                             <a href="view_job.php?id=<?= $job['id'] ?>"
-                                class="rounded-xl bg-blue-500 hover:bg-blue-600 px-3 py-2 text-sm text-white transition">
+                                class="btn btn-ghost btn-sm">
 
                                 <i class="fa-solid fa-eye mr-1"></i>
                                 View
 
                             </a>
 
-                            <a href="?delete=<?= $job['id'] ?>" onclick="return confirm('Delete this job?')"
-                                class="rounded-xl bg-red-500 hover:bg-red-600 px-3 py-2 text-sm text-white transition">
+                            <a href="?delete=<?= $job['id'] ?>" onclick="event.preventDefault(); confirmDialog('Delete this job?', function(){ window.location.href='?delete=<?= $job['id'] ?>'; }, {title:'Delete Job', confirmText:'Delete'})"
+                                class="btn btn-danger btn-sm">
 
                                 <i class="fa-solid fa-trash mr-1"></i>
                                 Delete
@@ -242,9 +256,18 @@ $jobs = $stmt->get_result();
                 <?php endwhile; ?>
 
             </div>
+            <?php else: ?>
+            <?php
+            $es_icon    = 'fa-solid fa-briefcase';
+            $es_title   = 'No jobs found';
+            $es_message = 'There are no job listings to display yet.';
+            $es_action  = '';
+            include '../include/empty_state.php';
+            ?>
+            <?php endif; ?>
             <!-- Pagination -->
             <?php if ($totalJobs > 0): ?>
-            <div class="mt-8 flex flex-col items-center gap-3 pb-4">
+            <div class="mt-4 flex flex-col items-center gap-2 pb-4">
 
                 <!-- Info Row -->
                 <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-sm text-slate-500">
@@ -254,22 +277,19 @@ $jobs = $stmt->get_result();
                         of
                         <strong class="text-slate-700"><?= $totalJobs ?></strong>
                     </span>
-                    
+
                 </div>
 
                 <!-- Controls Row -->
-                <div class="flex items-center gap-2">
+                <div class="pagination">
 
                     <!-- Previous -->
                     <?php if ($page > 1): ?>
-                        <a href="?page=<?= $page - 1 ?>"
-                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
+                        <a href="?page=<?= $page - 1 ?>">
                             <i class="fa-solid fa-chevron-left text-xs"></i> Previous
                         </a>
                     <?php else: ?>
-                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
-                            <i class="fa-solid fa-chevron-left text-xs"></i> Previous
-                        </span>
+                        <span class="disabled"><i class="fa-solid fa-chevron-left text-xs"></i> Previous</span>
                     <?php endif; ?>
 
                     <!-- Page Numbers -->
@@ -278,7 +298,7 @@ $jobs = $stmt->get_result();
                         $endPage   = min($totalPages, $page + 2);
                     ?>
                     <?php if ($startPage > 1): ?>
-                        <a href="?page=1" class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">1</a>
+                        <a href="?page=1">1</a>
                         <?php if ($startPage > 2): ?>
                             <span class="px-1 text-slate-400">&hellip;</span>
                         <?php endif; ?>
@@ -286,10 +306,7 @@ $jobs = $stmt->get_result();
 
                     <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
                         <a href="?page=<?= $i ?>"
-                           class="px-3 py-2 rounded-xl text-sm font-medium transition
-                           <?= $page == $i
-                               ? 'bg-cyan-500 text-white shadow-md shadow-cyan-200'
-                               : 'bg-white shadow text-slate-600 hover:bg-cyan-50 hover:text-cyan-700' ?>">
+                            class="<?= $page == $i ? 'active' : '' ?>">
                             <?= $i ?>
                         </a>
                     <?php endfor; ?>
@@ -298,19 +315,16 @@ $jobs = $stmt->get_result();
                         <?php if ($endPage < $totalPages - 1): ?>
                             <span class="px-1 text-slate-400">&hellip;</span>
                         <?php endif; ?>
-                        <a href="?page=<?= $totalPages ?>" class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition"><?= $totalPages ?></a>
+                        <a href="?page=<?= $totalPages ?>"><?= $totalPages ?></a>
                     <?php endif; ?>
 
                     <!-- Next -->
                     <?php if ($page < $totalPages): ?>
-                        <a href="?page=<?= $page + 1 ?>"
-                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
+                        <a href="?page=<?= $page + 1 ?>">
                             Next <i class="fa-solid fa-chevron-right text-xs"></i>
                         </a>
                     <?php else: ?>
-                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
-                            Next <i class="fa-solid fa-chevron-right text-xs"></i>
-                        </span>
+                        <span class="disabled">Next <i class="fa-solid fa-chevron-right text-xs"></i></span>
                     <?php endif; ?>
 
                 </div>

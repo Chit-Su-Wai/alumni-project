@@ -8,12 +8,34 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 require_once "../config/db.php";
+require_once "../include/request_guard.php";
 
 $user_id = $_SESSION["user_id"];
 $post_id = (int)($_POST["post_id"] ?? 0);
 
 if ($post_id <= 0) {
     echo json_encode(["error" => "Invalid post"]);
+    exit;
+}
+
+if (request_guard_is_duplicate('api_like', [
+    'user_id' => $user_id,
+    'post_id' => $post_id,
+], 2)) {
+    $check = $conn->prepare("SELECT id FROM post_likes WHERE post_id = ? AND user_id = ?");
+    $check->bind_param("ii", $post_id, $user_id);
+    $check->execute();
+    $liked = $check->get_result()->num_rows > 0;
+
+    $countStmt = $conn->prepare("SELECT COUNT(*) AS total FROM post_likes WHERE post_id = ?");
+    $countStmt->bind_param("i", $post_id);
+    $countStmt->execute();
+    $total = $countStmt->get_result()->fetch_assoc()['total'];
+
+    echo json_encode([
+        "liked" => $liked,
+        "count" => (int)$total
+    ]);
     exit;
 }
 

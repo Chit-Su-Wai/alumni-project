@@ -124,14 +124,17 @@ content="width=device-width, initial-scale=1">
 
         <div class="max-w-4xl">
 
-            <div class="flex justify-between mb-6">
-
-                <h1 class="text-3xl font-bold text-teal-700">
-                    View Post
-                </h1>
+            <div class="admin-page-head">
+                <div class="title-wrap">
+                    <div class="admin-title-icon"><i class="fa-regular fa-newspaper"></i></div>
+                    <div>
+                        <h1 class="admin-page-title">View Post</h1>
+                        <p class="admin-page-sub">Post content, engagement &amp; comments</p>
+                    </div>
+                </div>
 
                 <a href="posts.php"
-                   class="rounded-xl bg-slate-200 hover:bg-slate-300 px-4 py-2 text-sm font-semibold transition">
+                   class="btn btn-ghost">
 
                     <i class="fa-solid fa-arrow-left mr-1"></i> Back
 
@@ -139,7 +142,7 @@ content="width=device-width, initial-scale=1">
 
             </div>
 
-            <div class="bg-white rounded-3xl shadow-sm border border-cyan-50 overflow-hidden">
+            <div class="admin-card">
 
                 <div class="p-6 border-b border-slate-100">
 
@@ -149,7 +152,8 @@ content="width=device-width, initial-scale=1">
                         src="<?= !empty($post['profile_image'])
                             ? htmlspecialchars($post['profile_image'])
                             : '../images/default-avatar.svg' ?>"
-                        class="w-12 h-12 rounded-full object-cover border-2 border-cyan-100">
+                        class="admin-avatar w-12 h-12 cursor-zoom-in"
+                        onclick="openLightbox(this.src, '<?= htmlspecialchars($post['name']) ?>')">
 
                         <div>
 
@@ -179,7 +183,8 @@ content="width=device-width, initial-scale=1">
 
                             <img
                             src="<?= htmlspecialchars($img['image']) ?>"
-                            class="rounded-2xl w-full object-cover">
+                            class="rounded-2xl w-full object-cover cursor-zoom-in"
+                            onclick="openLightbox(this.src, 'Post image')">
 
                         <?php endwhile; ?>
 
@@ -201,7 +206,7 @@ content="width=device-width, initial-scale=1">
 
                     <div class="mt-4 flex items-center gap-4 text-xs text-slate-400">
 
-                        <span class="rounded-full bg-cyan-100 px-3 py-1 text-cyan-700 font-semibold">
+                        <span class="badge badge-cyan">
                             <?= htmlspecialchars($post['category']) ?>
                         </span>
 
@@ -218,11 +223,15 @@ content="width=device-width, initial-scale=1">
 
             <!-- Comments -->
 
-            <div class="bg-white rounded-3xl shadow-sm border border-cyan-50 mt-6 p-6">
+            <div class="admin-card mt-6">
 
-                <h2 class="font-bold text-lg mb-4 text-slate-800">
-                    <i class="fa-regular fa-comment mr-2 text-teal-600"></i>Comments
-                </h2>
+                <div class="admin-card-head">
+                    <div class="admin-card-title">
+                        <i class="fa-regular fa-comment fa-icon-chip"></i>Comments
+                    </div>
+                </div>
+
+                <div class="p-6">
 
                 <?php while($comment = $comments->fetch_assoc()): ?>
 
@@ -250,6 +259,8 @@ content="width=device-width, initial-scale=1">
                     </div>
 
                 <?php endwhile; ?>
+
+                </div>
 
             </div>
 

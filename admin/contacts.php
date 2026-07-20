@@ -25,6 +25,14 @@ if (isset($_GET['delete'])) {
     $stmt->bind_param("i", $id);
     $stmt->execute();
 
+    admin_log_activity(
+        $conn,
+        'Delete Contact',
+        'Deleted contact message #' . $id,
+        'contact',
+        $id
+    );
+
     header("Location: contacts.php");
     exit;
 }
@@ -45,6 +53,24 @@ $offset = ($page - 1) * $limit;
 $totalMessages = $conn->query("
 SELECT COUNT(*) total
 FROM contact_messages
+")->fetch_assoc()['total'];
+
+$readMessages = $conn->query("
+SELECT COUNT(*) total
+FROM contact_messages
+WHERE is_read = 1
+")->fetch_assoc()['total'];
+
+$unreadMessages = $conn->query("
+SELECT COUNT(*) total
+FROM contact_messages
+WHERE is_read = 0
+")->fetch_assoc()['total'];
+
+$repliedMessages = $conn->query("
+SELECT COUNT(*) total
+FROM contact_messages
+WHERE replied_at IS NOT NULL
 ")->fetch_assoc()['total'];
 
 $totalPages = ceil(
@@ -95,52 +121,57 @@ $messages = $stmt->get_result();
 
         <?php include "../include/admin_header.php"; ?>
 
-        <div class="flex-1 flex flex-col min-h-screen p-6">
+        <div class="flex-1 flex flex-col min-h-screen p-4">
 
             <!-- Header -->
 
-            <div class="flex items-center justify-between mb-6">
+            <div class="admin-page-head">
 
-                <h1 class="text-3xl font-bold text-teal-700">
-                    Contact Messages
-                </h1>
+                <div class="title-wrap">
+                    <div class="admin-title-icon"><i class="fa-solid fa-envelope"></i></div>
+                    <div>
+                        <h1 class="admin-page-title">Contact Messages</h1>
+                        <p class="admin-page-sub">Read and manage contact messages</p>
+                    </div>
+                </div>
 
             </div>
 
-            <!-- Total Messages -->
-
-            <!-- <div class="bg-white rounded-2xl p-3 shadow mb-6">
-
-            <p class="text-sm text-slate-500">
-                Total Messages
-            </p>
-
-            <h2 class="text-2xl font-black text-teal-700 mt-1">
-
-               
-
-            </h2>
-
-        </div> -->
-            <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 rounded-xl shadow-sm p-3 mb-6 w-[300px]">
-
-                <p class="text-sm text-slate-500">
-                    Total Messages
-                </p>
-
-                <h2 class="text-2xl font-bold text-teal-700 mt-1">
-                    <?= $totalMessages ?>
-                </h2>
-
+            <!-- Compact Stats -->
+            <div class="admin-stagger grid grid-cols-2 xl:grid-cols-4 gap-2.5 mb-4">
+                <div class="admin-stat">
+                    <span class="stat-spark"></span>
+                    <div class="stat-icon"><i class="fa-solid fa-envelope"></i></div>
+                    <div class="stat-value"><?= $totalMessages ?></div>
+                    <div class="stat-label">Total Messages</div>
+                </div>
+                <div class="admin-stat">
+                    <span class="stat-spark"></span>
+                    <div class="stat-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
+                    <div class="stat-value"><?= $readMessages ?></div>
+                    <div class="stat-label">Read</div>
+                </div>
+                <div class="admin-stat">
+                    <span class="stat-spark"></span>
+                    <div class="stat-icon"><i class="fa-solid fa-envelope-open"></i></div>
+                    <div class="stat-value"><?= $unreadMessages ?></div>
+                    <div class="stat-label">Unread</div>
+                </div>
+                <div class="admin-stat">
+                    <span class="stat-spark"></span>
+                    <div class="stat-icon"><i class="fa-solid fa-reply"></i></div>
+                    <div class="stat-value"><?= $repliedMessages ?></div>
+                    <div class="stat-label">Replied</div>
+                </div>
             </div>
 
             <!-- Messages -->
 
-            <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4 flex-1 content-start">
+            <div class="admin-stagger grid md:grid-cols-2 xl:grid-cols-3 gap-3 flex-1 content-start">
 
                 <?php while ($msg = $messages->fetch_assoc()): ?>
 
-                    <div class="bg-white rounded-2xl p-4 shadow">
+                    <div class="admin-card p-4">
 
                         <div class="flex items-start gap-3">
 
@@ -151,7 +182,8 @@ $messages = $stmt->get_result();
                             ?>
 
                             <img src="<?= htmlspecialchars($image) ?>"
-                                class="h-10 w-10 rounded-full object-cover border border-cyan-100 shrink-0" alt="Profile">
+                                class="admin-avatar shrink-0 cursor-zoom-in" alt="Profile"
+                                onclick="openLightbox(this.src, '<?= htmlspecialchars($msg['name']) ?>')">
                             <div class="min-w-0 flex-1">
 
                                 <h2 class="font-semibold text-slate-800 truncate">
@@ -172,11 +204,7 @@ $messages = $stmt->get_result();
 
                         <div class="mt-4 flex flex-wrap gap-2">
 
-                            <span class="rounded-full
-                        bg-cyan-100
-                        text-cyan-700
-                        px-3 py-1.5
-                        text-xs font-semibold">
+                            <span class="badge badge-cyan">
 
                                 <?= htmlspecialchars($msg['subject']) ?>
 
@@ -184,11 +212,7 @@ $messages = $stmt->get_result();
 
                             <?php if ($msg['is_read'] == 0): ?>
 
-                                <span class="bg-red-100
-                        text-red-600
-                        px-3 py-1.5
-                        rounded-full
-                        text-xs font-bold">
+                                <span class="badge badge-red">
 
                                     Unread
 
@@ -196,11 +220,7 @@ $messages = $stmt->get_result();
 
                             <?php else: ?>
 
-                                <span class="bg-green-100
-                        text-green-600
-                        px-3 py-1.5
-                        rounded-full
-                        text-xs font-bold">
+                                <span class="badge badge-green">
 
                                     Read
 
@@ -247,21 +267,13 @@ $messages = $stmt->get_result();
 
                         <div class="mt-4 flex flex-wrap gap-2">
 
-                            <a href="view_contact.php?id=<?= $msg['id'] ?>" class="rounded-xl
-                       bg-blue-500
-                       px-3 py-2
-                       text-sm
-                       text-white">
+                            <a href="view_contact.php?id=<?= $msg['id'] ?>" class="btn btn-ghost btn-sm">
 
                                 View
 
                             </a>
 
-                            <a href="?delete=<?= $msg['id'] ?>" onclick="return confirm('Delete this message?')" class="rounded-xl
-                       bg-red-500
-                       px-3 py-2
-                       text-sm
-                       text-white">
+                            <a href="?delete=<?= $msg['id'] ?>" onclick="event.preventDefault(); confirmDialog('Delete this message?', function(){ window.location.href='?delete=<?= $msg['id'] ?>'; }, {title:'Delete Message', confirmText:'Delete'})" class="btn btn-danger btn-sm">
 
                                 Delete
 
@@ -276,38 +288,43 @@ $messages = $stmt->get_result();
             </div>
 
             <!-- Pagination -->
-            <div class="flex items-center justify-center gap-4"> <?php if ($totalMessages > 0): ?>
-                    <div class="mt-8 flex flex-col items-center gap-3"> <!-- Info Row -->
-                        <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-sm text-slate-500">
-                            <span> Showing <strong
-                                    class="text-slate-700"><?= $offset + 1 ?>–<?= min($offset + $limit, $totalMessages) ?></strong>
-                                of <strong class="text-slate-700"><?= $totalMessages ?></strong> </span> </div>
-                        <!-- Controls Row -->
-                        <div class=""> <!-- Previous --> <?php if ($page > 1): ?> <a href="?page=<?= $page - 1 ?>"
-                                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
-                                    <i class="fa-solid fa-chevron-left text-xs"></i> Previous </a> <?php else: ?> <span
-                                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
-                                    <i class="fa-solid fa-chevron-left text-xs"></i> Previous </span> <?php endif; ?>
-                            <!-- Page Numbers -->
-                            <?php $startPage = max(1, $page - 2);
-                            $endPage = min($totalPages, $page + 2); ?>
-                            <?php if ($startPage > 1): ?> <a href="?page=1"
-                                    class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">1</a>
-                                <?php if ($startPage > 2): ?> <span class="px-1 text-slate-400">…</span> <?php endif; ?>
-                            <?php endif; ?>     <?php for ($i = $startPage; $i <= $endPage; $i++): ?> <a href="?page=<?= $i ?>"
-                                    class="px-3 py-2 rounded-xl text-sm font-medium transition <?= $page == $i ? 'bg-cyan-500 text-white shadow-md shadow-cyan-200' : 'bg-white shadow text-slate-600 hover:bg-cyan-50 hover:text-cyan-700' ?>">
-                                    <?= $i ?> </a> <?php endfor; ?>     <?php if ($endPage < $totalPages): ?>
-                                <?php if ($endPage < $totalPages - 1): ?> <span class="px-1 text-slate-400">…</span>
-                                <?php endif; ?> <a href="?page=<?= $totalPages ?>"
-                                    class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition"><?= $totalPages ?></a>
-                            <?php endif; ?> <!-- Next --> <?php if ($page < $totalPages): ?> <a
-                                    href="?page=<?= $page + 1 ?>"
-                                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
-                                    Next <i class="fa-solid fa-chevron-right text-xs"></i> </a> <?php else: ?> <span
-                                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
-                                    Next <i class="fa-solid fa-chevron-right text-xs"></i> </span> <?php endif; ?> </div>
-                    </div> <?php endif; ?>
+            <?php if ($totalMessages > 0): ?>
+            <div class="mt-4 flex flex-col items-center gap-2 pb-4">
+                <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                    <span> Showing <strong
+                            class="text-slate-700"><?= $offset + 1 ?>–<?= min($offset + $limit, $totalMessages) ?></strong>
+                        of <strong class="text-slate-700"><?= $totalMessages ?></strong> </span>
+                </div>
+                <!-- Controls Row -->
+                <div class="pagination">
+                    <?php if ($page > 1): ?> <a href="?page=<?= $page - 1 ?>">
+                            <i class="fa-solid fa-chevron-left text-xs"></i> Previous </a> <?php else: ?> <span
+                            class="disabled"><i class="fa-solid fa-chevron-left text-xs"></i> Previous </span> <?php endif; ?>
+                    <!-- Page Numbers -->
+                    <?php $startPage = max(1, $page - 2);
+                    $endPage = min($totalPages, $page + 2); ?>
+                    <?php if ($startPage > 1): ?> <a href="?page=1">1</a>
+                        <?php if ($startPage > 2): ?> <span class="px-1 text-slate-400">…</span> <?php endif; ?>
+                    <?php endif; ?>     <?php for ($i = $startPage; $i <= $endPage; $i++): ?> <a href="?page=<?= $i ?>"
+                            class="<?= $page == $i ? 'active' : '' ?>">
+                            <?= $i ?> </a> <?php endfor; ?>     <?php if ($endPage < $totalPages): ?>
+                        <?php if ($endPage < $totalPages - 1): ?> <span class="px-1 text-slate-400">…</span>
+                        <?php endif; ?> <a href="?page=<?= $totalPages ?>"><?= $totalPages ?></a>
+                    <?php endif; ?> <!-- Next --> <?php if ($page < $totalPages): ?> <a
+                            href="?page=<?= $page + 1 ?>">
+                            Next <i class="fa-solid fa-chevron-right text-xs"></i> </a> <?php else: ?> <span
+                            class="disabled">Next <i class="fa-solid fa-chevron-right text-xs"></i> </span> <?php endif; ?>
+                </div>
             </div>
+            <?php else: ?>
+            <?php
+            $es_icon    = 'fa-regular fa-envelope';
+            $es_title   = 'No messages found';
+            $es_message = 'There are no contact messages to display yet.';
+            $es_action  = '';
+            include '../include/empty_state.php';
+            ?>
+            <?php endif; ?>
         </div>
 
     </div>

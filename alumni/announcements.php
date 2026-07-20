@@ -71,16 +71,20 @@ $announcements = $annStmt->get_result();
             </h2>
 
             <?php if ($events->num_rows === 0): ?>
-                <div class="rounded-3xl border border-cyan-100 bg-white p-8 text-center text-sm font-semibold text-slate-500 shadow-sm">
-                    No upcoming events scheduled.
-                </div>
+                <?php
+                $es_icon    = 'fa-solid fa-calendar-days';
+                $es_title   = 'No upcoming events';
+                $es_message = 'There are no events scheduled right now.';
+                include '../include/empty_state.php';
+                ?>
             <?php else: ?>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <?php while ($item = $events->fetch_assoc()): ?>
                         <div class="overflow-hidden rounded-3xl border border-cyan-100 bg-white shadow-sm">
                             <?php if (!empty($item['image'])): ?>
                                 <img src="<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['title']) ?>"
-                                    class="h-44 w-full object-cover">
+                                    class="h-44 w-full object-cover cursor-zoom-in"
+                                    onclick="openLightbox('<?= htmlspecialchars($item['image'], ENT_QUOTES) ?>', '<?= htmlspecialchars($item['title'], ENT_QUOTES) ?>')">
                             <?php endif; ?>
                             <div class="p-5">
                                 <h3 class="text-lg font-black text-teal-800"><?= htmlspecialchars($item['title']) ?></h3>
@@ -125,16 +129,20 @@ $announcements = $annStmt->get_result();
             </h2>
 
             <?php if ($announcements->num_rows === 0): ?>
-                <div class="rounded-3xl border border-cyan-100 bg-white p-8 text-center text-sm font-semibold text-slate-500 shadow-sm">
-                    No announcements yet.
-                </div>
+                <?php
+                $es_icon    = 'fa-solid fa-bullhorn';
+                $es_title   = 'No announcements yet';
+                $es_message = 'Check back later for the latest updates.';
+                include '../include/empty_state.php';
+                ?>
             <?php else: ?>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <?php while ($item = $announcements->fetch_assoc()): ?>
                         <div class="overflow-hidden rounded-3xl border border-cyan-100 bg-white shadow-sm">
                             <?php if (!empty($item['image'])): ?>
                                 <img src="<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['title']) ?>"
-                                    class="h-44 w-full object-cover">
+                                    class="h-44 w-full object-cover cursor-zoom-in"
+                                    onclick="openLightbox('<?= htmlspecialchars($item['image'], ENT_QUOTES) ?>', '<?= htmlspecialchars($item['title'], ENT_QUOTES) ?>')">
                             <?php endif; ?>
                             <div class="p-5">
                                 <h3 class="text-lg font-black text-teal-800"><?= htmlspecialchars($item['title']) ?></h3>

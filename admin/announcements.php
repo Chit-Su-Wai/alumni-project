@@ -16,7 +16,7 @@ require_once "../config/db.php";
 if (isset($_GET['delete'])) {
     $id = (int) $_GET['delete'];
 
-    $imgStmt = $conn->prepare("SELECT image FROM announcements WHERE id = ?");
+    $imgStmt = $conn->prepare("SELECT image, title FROM announcements WHERE id = ?");
     $imgStmt->bind_param("i", $id);
     $imgStmt->execute();
     $row = $imgStmt->get_result()->fetch_assoc();
@@ -28,6 +28,14 @@ if (isset($_GET['delete'])) {
     $stmt = $conn->prepare("DELETE FROM announcements WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
+
+    admin_log_activity(
+        $conn,
+        'Delete Announcement',
+        'Deleted announcement #' . $id . (!empty($row['title']) ? ' - ' . $row['title'] : ''),
+        'announcement',
+        $id
+    );
 
     $returnPage = max(1, (int) ($_GET['page'] ?? 1));
     header("Location: announcements.php?page=" . $returnPage);
@@ -82,43 +90,54 @@ $items = $stmt->get_result();
 
         <?php include "../include/admin_header.php"; ?>
 
-        <div class="flex-1 p-6 flex flex-col">
+        <div class="flex-1 p-4 flex flex-col">
 
             <!-- Header -->
-            <div class="flex items-center justify-between mb-6">
-                <h1 class="text-3xl font-bold text-teal-700">
-                    Announcements &amp; Events
-                </h1>
+            <div class="admin-page-head">
+                <div class="title-wrap">
+                    <div class="admin-title-icon"><i class="fa-solid fa-bullhorn"></i></div>
+                    <div>
+                        <h1 class="admin-page-title">Announcements &amp; Events</h1>
+                        <p class="admin-page-sub">Create and manage announcements and events</p>
+                    </div>
+                </div>
 
                 <a href="announcement_form.php"
-                    class="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow hover:bg-teal-700 transition">
+                    class="btn btn-primary">
                     <i class="fa-solid fa-plus"></i>
                     New
                 </a>
             </div>
 
             <!-- Total -->
-            <div class="bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 rounded-xl shadow-sm p-3 mb-6 w-[300px]">
-                <p class="text-sm text-slate-500">Total Items</p>
-                <h2 class="text-2xl font-bold text-teal-700 mt-1"><?= $total ?></h2>
+            <div class="admin-stat w-[220px] mb-4">
+                <span class="stat-spark"></span>
+                <div class="stat-icon"><i class="fa-solid fa-bullhorn"></i></div>
+                <div class="stat-value"><?= $total ?></div>
+                <div class="stat-label">Total Items</div>
             </div>
 
             <?php if ($total === 0): ?>
-                <div class="rounded-2xl bg-white p-10 text-center text-slate-500 shadow">
-                    No announcements or events yet.
-                </div>
+            <?php
+            $es_icon    = 'fa-solid fa-bullhorn';
+            $es_title   = 'No announcements yet';
+            $es_message = 'Create your first announcement or event to show here.';
+            $es_action  = '<a href="announcement_form.php" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Announcement</a>';
+            include '../include/empty_state.php';
+            ?>
             <?php else: ?>
 
             <!-- List -->
-            <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4 flex-1 content-start">
+            <div class="admin-stagger grid md:grid-cols-2 xl:grid-cols-3 gap-3 flex-1 content-start">
 
                 <?php while ($item = $items->fetch_assoc()): ?>
-                    <div class="bg-white rounded-2xl shadow overflow-hidden flex flex-col">
+                    <div class="admin-card flex flex-col">
                         <?php if (!empty($item['image'])): ?>
                             <img src="<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['title']) ?>"
-                                class="h-40 w-full object-cover">
+                                class="h-28 w-full object-cover cursor-zoom-in"
+                                onclick="openLightbox(this.src, '<?= htmlspecialchars($item['title']) ?>')">
                         <?php else: ?>
-                            <div class="h-40 w-full bg-gradient-to-r from-cyan-100 to-teal-100 flex items-center justify-center text-teal-500">
+                            <div class="h-28 w-full bg-gradient-to-r from-cyan-100 to-teal-100 flex items-center justify-center text-teal-500">
                                 <i class="fa-solid fa-bullhorn text-4xl"></i>
                             </div>
                         <?php endif; ?>
@@ -128,10 +147,10 @@ $items = $stmt->get_result();
                                 <h2 class="font-semibold text-slate-800 leading-5">
                                     <?= htmlspecialchars($item['title']) ?>
                                 </h2>
-                                <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold
+                                <span class="badge shrink-0
                                     <?= $item['type'] === 'event'
-                                        ? 'bg-teal-100 text-teal-700'
-                                        : 'bg-cyan-100 text-cyan-700' ?>">
+                                        ? 'badge-green'
+                                        : 'badge-cyan' ?>">
                                     <?= $item['type'] === 'event' ? 'Event' : 'Announcement' ?>
                                 </span>
                             </div>
@@ -160,11 +179,11 @@ $items = $stmt->get_result();
 
                             <div class="mt-4 flex flex-wrap gap-2 pt-2">
                                 <a href="announcement_form.php?id=<?= $item['id'] ?>"
-                                    class="rounded-xl bg-blue-500 hover:bg-blue-600 px-3 py-2 text-sm text-white transition">
+                                    class="btn btn-ghost btn-sm">
                                     <i class="fa-solid fa-pen mr-1"></i> Edit
                                 </a>
-                                <a href="?delete=<?= $item['id'] ?>&page=<?= $page ?>" onclick="return confirm('Delete this item?')"
-                                    class="rounded-xl bg-red-500 hover:bg-red-600 px-3 py-2 text-sm text-white transition">
+                                <a href="?delete=<?= $item['id'] ?>&page=<?= $page ?>" onclick="event.preventDefault(); confirmDialog('Delete this item?', function(){ window.location.href='?delete=<?= $item['id'] ?>&page=<?= $page ?>'; }, {title:'Delete Item', confirmText:'Delete'})"
+                                    class="btn btn-danger btn-sm">
                                     <i class="fa-solid fa-trash mr-1"></i> Delete
                                 </a>
                             </div>
@@ -176,7 +195,7 @@ $items = $stmt->get_result();
 
             <!-- Pagination -->
             <?php if ($total > 0): ?>
-            <div class="mt-8 flex flex-col items-center gap-3 pb-4">
+            <div class="mt-4 flex flex-col items-center gap-2 pb-4">
 
                 <!-- Info Row -->
                 <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-sm text-slate-500">
@@ -189,16 +208,13 @@ $items = $stmt->get_result();
                     </span>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="pagination">
                     <?php if ($page > 1): ?>
-                        <a href="?page=<?= $page - 1 ?>"
-                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
+                        <a href="?page=<?= $page - 1 ?>">
                             <i class="fa-solid fa-chevron-left text-xs"></i> Previous
                         </a>
                     <?php else: ?>
-                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
-                            <i class="fa-solid fa-chevron-left text-xs"></i> Previous
-                        </span>
+                        <span class="disabled"><i class="fa-solid fa-chevron-left text-xs"></i> Previous</span>
                     <?php endif; ?>
 
                     <?php
@@ -206,7 +222,7 @@ $items = $stmt->get_result();
                         $endPage   = min($totalPages, $page + 2);
                     ?>
                     <?php if ($startPage > 1): ?>
-                        <a href="?page=1" class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">1</a>
+                        <a href="?page=1">1</a>
                         <?php if ($startPage > 2): ?>
                             <span class="px-1 text-slate-400">&hellip;</span>
                         <?php endif; ?>
@@ -214,10 +230,7 @@ $items = $stmt->get_result();
 
                     <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
                         <a href="?page=<?= $i ?>"
-                           class="px-3 py-2 rounded-xl text-sm font-medium transition
-                           <?= $page == $i
-                               ? 'bg-cyan-500 text-white shadow-md shadow-cyan-200'
-                               : 'bg-white shadow text-slate-600 hover:bg-cyan-50 hover:text-cyan-700' ?>">
+                            class="<?= $page == $i ? 'active' : '' ?>">
                             <?= $i ?>
                         </a>
                     <?php endfor; ?>
@@ -226,18 +239,15 @@ $items = $stmt->get_result();
                         <?php if ($endPage < $totalPages - 1): ?>
                             <span class="px-1 text-slate-400">&hellip;</span>
                         <?php endif; ?>
-                        <a href="?page=<?= $totalPages ?>" class="px-3 py-2 rounded-xl bg-white shadow text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition"><?= $totalPages ?></a>
+                        <a href="?page=<?= $totalPages ?>"><?= $totalPages ?></a>
                     <?php endif; ?>
 
                     <?php if ($page < $totalPages): ?>
-                        <a href="?page=<?= $page + 1 ?>"
-                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition">
+                        <a href="?page=<?= $page + 1 ?>">
                             Next <i class="fa-solid fa-chevron-right text-xs"></i>
                         </a>
                     <?php else: ?>
-                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white shadow text-sm font-medium text-slate-300 cursor-not-allowed">
-                            Next <i class="fa-solid fa-chevron-right text-xs"></i>
-                        </span>
+                        <span class="disabled">Next <i class="fa-solid fa-chevron-right text-xs"></i></span>
                     <?php endif; ?>
                 </div>
             </div>

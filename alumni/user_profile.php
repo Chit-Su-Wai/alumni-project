@@ -142,6 +142,15 @@ $socialItems = [
     "viber" => ["Viber", "fa-brands fa-viber"],
     "whatsapp" => ["WhatsApp", "fa-brands fa-whatsapp"]
 ];
+
+$savedPostIds = [];
+$savedIdsStmt = $conn->prepare("SELECT post_id FROM saved_posts WHERE user_id = ?");
+$savedIdsStmt->bind_param('i', $current_user_id);
+$savedIdsStmt->execute();
+$savedIdsResult = $savedIdsStmt->get_result();
+while ($savedRow = $savedIdsResult->fetch_assoc()) {
+    $savedPostIds[(int) $savedRow['post_id']] = true;
+}
 ?>
 
 <!DOCTYPE html>
@@ -168,7 +177,8 @@ $socialItems = [
                 <div class="-mt-16 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div class="flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left">
                         <img src="<?= e($profileImage) ?>" alt="<?= e($user["name"]) ?>"
-                            class="h-32 w-32 rounded-full border-4 border-white bg-white object-cover shadow-lg">
+                            class="h-32 w-32 rounded-full border-4 border-white bg-white object-cover shadow-lg cursor-zoom-in"
+                            onclick="openLightbox(this.src, '<?= e($user['name']) ?>')">
 
                         <div>
                             <h1 class="text-3xl font-black text-slate-900">
@@ -225,7 +235,7 @@ $socialItems = [
                 <?php if ($current_user_id === $profile_id): ?>
                 <div class="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
                     <a href="edit_profile.php"
-                        class="rounded-full bg-gradient-to-r from-cyan-400 to-teal-500 px-5 py-3 text-sm font-black text-white shadow hover:opacity-90">
+                        class="btn btn-primary">
                         <i class="fa-solid fa-pen mr-1"></i> Edit Profile
                     </a>
                 </div>
@@ -334,9 +344,12 @@ $socialItems = [
                 <h2 class="mb-5 text-lg font-black text-slate-800">Experience</h2>
 
                 <?php if (count($jobs) === 0): ?>
-                    <div class="rounded-2xl bg-slate-50 p-6 text-center text-sm font-semibold text-slate-500">
-                        No experience added yet.
-                    </div>
+                    <?php
+                    $es_icon    = 'fa-solid fa-briefcase';
+                    $es_title   = 'No experience yet';
+                    $es_message = 'This alumnus has not added work experience.';
+                    include '../include/empty_state.php';
+                    ?>
                 <?php else: ?>
                     <div class="space-y-4">
                         <?php foreach ($jobs as $job): ?>
@@ -396,9 +409,12 @@ $socialItems = [
                 <h2 class="mb-5 text-lg font-black text-slate-800">Social Media</h2>
 
                 <?php if ($socialCount === 0): ?>
-                    <div class="rounded-2xl bg-slate-50 p-6 text-center text-sm font-semibold text-slate-500">
-                        No social links added yet.
-                    </div>
+                    <?php
+                    $es_icon    = 'fa-solid fa-share-nodes';
+                    $es_title   = 'No social links';
+                    $es_message = 'This alumnus has not shared social profiles.';
+                    include '../include/empty_state.php';
+                    ?>
                 <?php else: ?>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <?php foreach ($socialItems as $key => $item): ?>
@@ -416,21 +432,14 @@ $socialItems = [
         </section>
         <section id="posts" class="tab-content hidden mt-6">
 
-            <?php if ($userPosts->num_rows == 0): ?>
-
-                <div class="rounded-3xl bg-slate-50 p-10 text-center">
-
-                    <i class="fa-regular fa-file-lines text-5xl text-slate-300"></i>
-
-                    <p class="mt-4 text-slate-500">
-
-                        No Posts Yet
-
-                    </p>
-
-                </div>
-
-            <?php endif; ?>
+                <?php if ($userPosts->num_rows == 0): ?>
+                    <?php
+                    $es_icon    = 'fa-regular fa-newspaper';
+                    $es_title   = 'No posts yet';
+                    $es_message = 'This alumnus has not shared any posts.';
+                    include '../include/empty_state.php';
+                    ?>
+                <?php endif; ?>
 
             <?php while ($post = $userPosts->fetch_assoc()): ?>
 
@@ -503,7 +512,7 @@ $socialItems = [
 
                             <?php while ($img = $images->fetch_assoc()): ?>
 
-                                <img src="<?= e($img['image']) ?>" class="h-56 w-full rounded-2xl object-cover">
+                                <img src="<?= e($img['image']) ?>" class="h-56 w-full rounded-2xl object-cover cursor-zoom-in" onclick="openLightbox(this.src, 'Post image')">
 
                             <?php endwhile; ?>
 
@@ -547,23 +556,34 @@ $socialItems = [
 
                 ?>
 
-                <div class="mt-4 border-t pt-4 flex items-center gap-6 text-sm">
+                    <div class="mt-4 border-t pt-4 flex items-center gap-6 text-sm">
 
-                    <span class="text-slate-600">
-                        👍 <?= $likeCount ?> Likes
-                    </span>
+                        <span class="text-slate-600">
+                            👍 <?= $likeCount ?> Likes
+                        </span>
 
                     <span class="text-slate-600">
                         💬 <?= $commentCount ?> Comments
                     </span>
 
-                    <a href="feed.php?post_id=<?= $post['id'] ?>" class="text-cyan-600 font-semibold">
+                        <a href="feed.php?post_id=<?= $post['id'] ?>" class="text-cyan-600 font-semibold">
 
-                        View Post
+                            View Post
 
-                    </a>
+                        </a>
 
-                </div>
+                        <button type="button"
+                            onclick="toggleSavePost(<?= $post['id'] ?>, this)"
+                            data-saved="<?= !empty($savedPostIds[$post['id']]) ? '1' : '0' ?>"
+                            aria-pressed="<?= !empty($savedPostIds[$post['id']]) ? 'true' : 'false' ?>"
+                            class="h-8 w-8 flex items-center justify-center rounded-full border <?= !empty($savedPostIds[$post['id']]) ? 'border-cyan-100 bg-cyan-50 text-teal-700' : 'border-slate-100 bg-white text-slate-500' ?> hover:bg-cyan-50 transition"
+                            title="<?= !empty($savedPostIds[$post['id']]) ? 'Unsave Post' : 'Save Post' ?>">
+
+                            <i class="<?= !empty($savedPostIds[$post['id']]) ? 'fa-solid' : 'fa-regular' ?> fa-bookmark text-xs"></i>
+
+                        </button>
+
+                    </div>
 
             <?php endwhile; ?>
 

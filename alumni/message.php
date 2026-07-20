@@ -132,7 +132,8 @@ $users = $stmt->get_result();
 
                             <img src="<?= !empty($user['profile_image'])
                                 ? $user['profile_image']
-                                : '../images/default-avatar.svg' ?>" class="w-12 h-12 rounded-full object-cover">
+                                : '../images/default-avatar.svg' ?>" class="w-12 h-12 rounded-full object-cover cursor-zoom-in"
+                                onclick="openLightbox(this.src, '<?= htmlspecialchars(addslashes($user['name'])) ?>')">
 
                             <div class="flex-1 min-w-0">
 
@@ -177,15 +178,12 @@ $users = $stmt->get_result();
 
                         <div class="flex-1 flex items-center justify-center">
 
-                            <div class="text-center">
-
-                                <i class="fa-regular fa-comments text-6xl text-slate-300"></i>
-
-                                <h2 class="mt-4 text-xl font-bold text-slate-500">
-                                    Select a conversation
-                                </h2>
-
-                            </div>
+                            <?php
+                            $es_icon    = 'fa-regular fa-comment';
+                            $es_title   = 'No conversation selected';
+                            $es_message = 'Choose an alumni from the list to start chatting.';
+                            include '../include/empty_state.php';
+                            ?>
 
                         </div>
 
@@ -281,16 +279,16 @@ ORDER BY created_at ASC
 
                         </div>
 
-                        <form onsubmit="sendMessage(event)" class="border-t bg-white p-4 flex gap-3 shrink-0">
+                        <form onsubmit="sendMessage(event)" data-async-form="true" class="border-t bg-white p-4 flex gap-3 shrink-0">
 
                             <input type="hidden" name="receiver_id" id="receiver_id" value="<?= $receiver_id ?>">
 
                             <input type="text" name="message" id="messageInput" required placeholder="Type message..."
-                                class="flex-1 border rounded-xl px-4 py-3">
+                                class="input-base">
 
-                            <button type="submit" class="bg-cyan-500 text-white px-6 rounded-xl">
+                            <button type="submit" class="btn btn-primary">
 
-                                Send
+                                <i class="fa-solid fa-paper-plane"></i> Send
 
                             </button>
 
@@ -325,11 +323,17 @@ ORDER BY created_at ASC
         function sendMessage(e) {
             e.preventDefault();
 
+            var form = e.target;
             var input = document.getElementById('messageInput');
             var text = input.value.trim();
             var receiverId = document.getElementById('receiver_id').value;
 
             if (!text || !receiverId) return;
+
+            var lockKey = 'message-' + receiverId;
+            if (!lockRequest(lockKey)) return;
+
+            setSubmitButtonsState(form, true);
 
             var formData = new FormData();
             formData.append('receiver_id', receiverId);
@@ -354,6 +358,12 @@ ORDER BY created_at ASC
                 input.value = '';
                 lastMessageId = data.message_id;
                 scrollToBottom();
+            })
+            .catch(function () {
+            })
+            .finally(function () {
+                unlockRequest(lockKey);
+                setSubmitButtonsState(form, false);
             });
         }
 

@@ -1,115 +1,83 @@
 <?php
 session_start();
 require_once "../config/db.php";
+require_once "../include/mail_helper.php";
+require_once "../include/auth_helpers.php";
+require_once "../include/auth_layout.php";
 
 $error = "";
-$success = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-
     $email = trim($_POST["email"] ?? "");
 
     if ($email === "") {
-        $error = "Please enter your email.";
+        $error = "Please enter your email address.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "Please enter a valid email address.";
+    } elseif (!is_valid_existing_email($email)) {
+        $error = "Please enter a valid, existing email address.";
     } else {
-
-        $stmt = $conn->prepare("SELECT id, email FROM users WHERE email = ?");
+        $stmt = $conn->prepare("SELECT id, email, email_verified_at FROM users WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
-
         $result = $stmt->get_result();
 
-        if ($result->num_rows === 1) {
-
-            $_SESSION["reset_email"] = $email;
-
-            header("Location: reset_password.php");
-            exit;
-
+        if ($result->num_rows === 0) {
+            $error = "No account found with this email address.";
         } else {
-            $error = "Email not found.";
-        }
+            $user = $result->fetch_assoc();
 
+            if (empty($user['email_verified_at'])) {
+                $error = "This account has not been verified yet. Password reset is only available for verified email addresses.";
+            } else {
+                $_SESSION['reset_data'] = ['email' => $email];
+                $otp = generate_otp();
+                store_otp($conn, $email, $otp, 'reset');
+                $sent = send_otp_email($email, $otp, 'reset');
+
+                if ($sent) {
+                    header("Location: verify_otp.php?mode=reset");
+                    exit;
+                }
+
+                unset($_SESSION['reset_data']);
+                $error = "Could not send OTP email. Please try again later.";
+            }
+        }
         $stmt->close();
     }
 }
+
+$navVariant = 'auth';
+$navShowHome = true;
+$navShowRegister = true;
+$navShowLogin = true;
+
+auth_layout_head('Forgot Password | Alumni Network');
+include "../include/public_nav.php";
+auth_layout_start(
+    'Password Reset',
+    'Forgot Password',
+    "Enter your registered email and we'll send you an OTP to reset your password.",
+    'Forgot Password',
+    '<span data-t="forgot_desc">Enter your registered and verified email address.</span>'
+);
+
+echo render_auth_alert($error);
 ?>
+                <form method="POST" action="" class="auth-form auth-form-space-y-5">
+                    <div>
+                        <label class="ui-label" data-t="email">Email Address</label>
+                        <input type="email" name="email" value="<?= htmlspecialchars($_POST["email"] ?? "") ?>" required placeholder="Enter your email" class="input-base" autocomplete="email">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-paper-plane"></i> Send OTP</button>
+                </form>
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password | Alumni Network</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-
-<body class="min-h-screen bg-gradient-to-br from-white via-cyan-50 to-teal-50">
-
-<div class="flex min-h-screen items-center justify-center px-4">
-
-    <div class="w-full max-w-md rounded-[2rem] border border-cyan-100 bg-white p-8 shadow-2xl">
-
-        <div class="text-center">
-            <h1 class="text-3xl font-black text-teal-700">
-                Forgot Password
-            </h1>
-
-            <p class="mt-2 text-sm text-slate-500">
-                Enter your registered email address.
-            </p>
-        </div>
-
-        <?php if ($error): ?>
-            <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-                <?= htmlspecialchars($error) ?>
-            </div>
-        <?php endif; ?>
-
-        <?php if ($success): ?>
-            <div class="mt-6 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">
-                <?= htmlspecialchars($success) ?>
-            </div>
-        <?php endif; ?>
-
-        <form method="POST" class="mt-6 space-y-5">
-
-            <div>
-                <label class="mb-2 block text-sm font-bold text-slate-700">
-                    Email Address
-                </label>
-
-                <input
-                    type="email"
-                    name="email"
-                    required
-                    placeholder="Enter your email"
-                    class="w-full rounded-2xl border border-cyan-100 bg-cyan-50/60 px-4 py-3 outline-none focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100"
-                >
-            </div>
-
-            <button
-                type="submit"
-                class="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-teal-500 py-3 font-black text-white shadow-lg"
-            >
-                Continue
-            </button>
-
-        </form>
-
-        <div class="mt-6 text-center">
-            <a
-                href="login.php"
-                class="text-sm font-bold text-teal-700 hover:underline"
-            >
-                Back to Login
-            </a>
-        </div>
-
-    </div>
-
-</div>
-
-</body>
-</html>
+                <div class="auth-footer-link">
+                    <a href="login.php" class="btn btn-ghost btn-block"><i class="fa-solid fa-arrow-left"></i> Back to Login</a>
+                </div>
+<?php
+auth_layout_end();
+include "../include/footer.php";
+include "../include/ui_components.php";
+auth_layout_scripts();

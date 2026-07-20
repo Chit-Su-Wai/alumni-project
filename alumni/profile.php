@@ -44,6 +44,46 @@ $profileImage = !empty($user["profile_image"])
     ? $user["profile_image"]
     : "../images/default-avatar.svg";
 
+$profileMessage = $_SESSION['profile_message'] ?? '';
+unset($_SESSION['profile_message']);
+
+$savedPostIds = [];
+$savedIdsStmt = $conn->prepare("SELECT post_id FROM saved_posts WHERE user_id = ?");
+$savedIdsStmt->bind_param('i', $user_id);
+$savedIdsStmt->execute();
+$savedIdsResult = $savedIdsStmt->get_result();
+while ($savedRow = $savedIdsResult->fetch_assoc()) {
+    $savedPostIds[(int) $savedRow['post_id']] = true;
+}
+
+$savedLimit = 5;
+$savedPage = max(1, (int) ($_GET['saved_page'] ?? 1));
+$savedOffset = ($savedPage - 1) * $savedLimit;
+$savedCountStmt = $conn->prepare("
+    SELECT COUNT(*) total
+    FROM saved_posts sp
+    INNER JOIN posts p ON p.id = sp.post_id
+    INNER JOIN users u ON u.id = p.user_id
+    WHERE sp.user_id = ? AND u.role = 'user'
+");
+$savedCountStmt->bind_param('i', $user_id);
+$savedCountStmt->execute();
+$savedTotal = (int) ($savedCountStmt->get_result()->fetch_assoc()['total'] ?? 0);
+$savedTotalPages = max(1, (int) ceil($savedTotal / $savedLimit));
+
+$savedPostsStmt = $conn->prepare("
+    SELECT p.id, p.content, p.category, p.image, p.created_at, u.name, u.profile_image
+    FROM saved_posts sp
+    INNER JOIN posts p ON p.id = sp.post_id
+    INNER JOIN users u ON u.id = p.user_id
+    WHERE sp.user_id = ? AND u.role = 'user'
+    ORDER BY sp.created_at DESC
+    LIMIT ?, ?
+");
+$savedPostsStmt->bind_param('iii', $user_id, $savedOffset, $savedLimit);
+$savedPostsStmt->execute();
+$savedPosts = $savedPostsStmt->get_result();
+
 /* Jobs */
 
 $jobStmt = $conn->prepare(
@@ -97,6 +137,12 @@ $posts = $postStmt->get_result();
 
     <main class="max-w-6xl mx-auto px-4 py-6">
 
+        <?php if (!empty($profileMessage)): ?>
+            <div class="mb-4 rounded-2xl border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-bold text-teal-700">
+                <?= e($profileMessage) ?>
+            </div>
+        <?php endif; ?>
+
         <section class="overflow-hidden rounded-3xl bg-white shadow">
 
             <div class="h-48 bg-gradient-to-r from-cyan-400 via-teal-400 to-teal-600">
@@ -109,7 +155,8 @@ $posts = $postStmt->get_result();
                     <div class="flex flex-col md:flex-row items-center gap-4">
 
                         <img src="<?= e($profileImage) ?>"
-                            class="h-32 w-32 rounded-full border-4 border-white object-cover shadow-lg">
+                            class="h-32 w-32 rounded-full border-4 border-white object-cover shadow-lg cursor-zoom-in"
+                            onclick="openLightbox(this.src, '<?= e($user['name']) ?>')">
 
                         <div>
 
@@ -149,9 +196,9 @@ $posts = $postStmt->get_result();
                     </div>
 
                     <a href="edit_profile.php"
-                        class="mt-4 md:mt-0 rounded-full bg-cyan-500 px-5 py-3 font-bold text-white">
+                        class="btn btn-primary mt-4 md:mt-0">
 
-                        Edit Profile
+                        <i class="fa-solid fa-pen"></i> Edit Profile
 
                     </a>
 
@@ -194,6 +241,12 @@ $posts = $postStmt->get_result();
                 <button onclick="showTab('posts')" id="btn-posts" class="tab-btn rounded-full px-4 py-2">
 
                     Posts
+
+                </button>
+
+                <button onclick="showTab('saved')" id="btn-saved" class="tab-btn rounded-full px-4 py-2">
+
+                    Saved Posts
 
                 </button>
 
@@ -341,19 +394,12 @@ $posts = $postStmt->get_result();
             <div id="experience" class="tab-content hidden mt-6">
 
                 <?php if ($jobs->num_rows == 0): ?>
-
-                    <div class="rounded-3xl bg-slate-50 p-10 text-center">
-
-                        <i class="fa-solid fa-briefcase text-5xl text-slate-300"></i>
-
-                        <p class="mt-4 text-slate-500">
-
-                            No work experience added yet.
-
-                        </p>
-
-                    </div>
-
+                    <?php
+                    $es_icon    = 'fa-solid fa-briefcase';
+                    $es_title   = 'No work experience yet';
+                    $es_message = 'Add your work experience from your profile settings.';
+                    include '../include/empty_state.php';
+                    ?>
                 <?php endif; ?>
 
                 <?php while ($job = $jobs->fetch_assoc()): ?>
@@ -485,19 +531,12 @@ $posts = $postStmt->get_result();
             <div id="posts" class="tab-content hidden mt-6">
 
                 <?php if ($posts->num_rows == 0): ?>
-
-                    <div class="rounded-3xl bg-slate-50 p-10 text-center">
-
-                        <i class="fa-regular fa-file-lines text-5xl text-slate-300"></i>
-
-                        <p class="mt-4 text-slate-500">
-
-                            No Posts Yet
-
-                        </p>
-
-                    </div>
-
+                    <?php
+                    $es_icon    = 'fa-regular fa-newspaper';
+                    $es_title   = 'No posts yet';
+                    $es_message = 'Share something with your alumni network.';
+                    include '../include/empty_state.php';
+                    ?>
                 <?php endif; ?>
 
                 <?php while ($post = $posts->fetch_assoc()): ?>
@@ -629,7 +668,7 @@ if($checkTable->num_rows > 0){
 
                                 <?php while ($img = $images->fetch_assoc()): ?>
 
-                                    <img src="<?= e($img['image']) ?>" class="h-56 w-full rounded-2xl object-cover">
+                                    <img src="<?= e($img['image']) ?>" class="h-56 w-full rounded-2xl object-cover cursor-zoom-in" onclick="openLightbox(this.src, 'Post image')">
 
                                     
 
@@ -677,7 +716,18 @@ class="mt-5 flex items-center justify-between border-t pt-4">
 
     </div>
 
-    <div class="flex items-center gap-5">
+    <div class="flex items-center gap-3">
+
+        <button type="button"
+            onclick="toggleSavePost(<?= $post['id'] ?>, this)"
+            data-saved="<?= !empty($savedPostIds[$post['id']]) ? '1' : '0' ?>"
+            aria-pressed="<?= !empty($savedPostIds[$post['id']]) ? 'true' : 'false' ?>"
+            class="h-8 w-8 flex items-center justify-center rounded-full border <?= !empty($savedPostIds[$post['id']]) ? 'border-cyan-100 bg-cyan-50 text-teal-700' : 'border-slate-100 bg-white text-slate-500' ?> hover:bg-cyan-50 transition"
+            title="<?= !empty($savedPostIds[$post['id']]) ? 'Unsave Post' : 'Save Post' ?>">
+
+            <i class="<?= !empty($savedPostIds[$post['id']]) ? 'fa-solid' : 'fa-regular' ?> fa-bookmark text-xs"></i>
+
+        </button>
 
         <a
         href="edit_post.php?id=<?= $post['id'] ?>"
@@ -691,7 +741,7 @@ class="mt-5 flex items-center justify-between border-t pt-4">
 
         <a
         href="delete_post.php?id=<?= $post['id'] ?>"
-        onclick="return confirm('Delete this post?')"
+        onclick="event.preventDefault(); confirmDialog('Delete this post?', function(){ window.location.href='delete_post.php?id=<?= $post['id'] ?>'; }, {title:'Delete Post', confirmText:'Delete'})"
         class="text-slate-500 hover:text-red-500">
 
             <i class="fa-solid fa-trash"></i>
@@ -712,6 +762,106 @@ class="mt-5 flex items-center justify-between border-t pt-4">
             </div>
 
         </div>
+
+        <section id="saved" class="tab-content hidden mt-6">
+            <div class="rounded-[2rem] border border-cyan-100 bg-white p-6 shadow-sm">
+                <div class="mb-5 flex items-center justify-between gap-3">
+                    <h2 class="text-lg font-black text-slate-800">Saved Posts</h2>
+                    <span class="badge badge-cyan"><?= $savedTotal ?></span>
+                </div>
+
+                <?php if ($savedPosts->num_rows === 0): ?>
+                    <?php
+                    $es_icon    = 'fa-regular fa-bookmark';
+                    $es_title   = 'No saved posts';
+                    $es_message = 'Saved posts will appear here after you bookmark them.';
+                    include '../include/empty_state.php';
+                    ?>
+                <?php else: ?>
+                    <div class="space-y-4">
+                        <?php while ($saved = $savedPosts->fetch_assoc()): ?>
+                            <div class="relative rounded-3xl bg-slate-50 p-5">
+                                <div class="absolute right-4 top-4">
+                                    <button type="button"
+                                        onclick="toggleSavePost(<?= $saved['id'] ?>, this)"
+                                        data-saved="1"
+                                        aria-pressed="true"
+                                        class="h-8 w-8 flex items-center justify-center rounded-full border border-cyan-100 bg-cyan-50 text-teal-700 hover:bg-cyan-100 transition"
+                                        title="Unsave Post">
+                                        <i class="fa-solid fa-bookmark text-xs"></i>
+                                    </button>
+                                </div>
+
+                                <div class="flex items-center gap-3">
+                                    <img src="<?= e(!empty($saved['profile_image']) ? $saved['profile_image'] : '../images/default-avatar.svg') ?>"
+                                        class="h-12 w-12 rounded-full object-cover border cursor-zoom-in"
+                                        onclick="openLightbox(this.src, '<?= e($saved['name']) ?>')">
+                                    <div>
+                                        <h3 class="font-bold text-slate-800"><?= e($saved['name']) ?></h3>
+                                        <p class="text-xs text-slate-500"><?= date('M d, Y h:i A', strtotime($saved['created_at'])) ?></p>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3">
+                                    <span class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700"><?= e($saved['category']) ?></span>
+                                </div>
+
+                                <div class="mt-3 text-slate-700 leading-7">
+                                    <?= nl2br(e($saved['content'])) ?>
+                                </div>
+
+                                <?php if (!empty($saved['image'])): ?>
+                                    <img src="<?= e($saved['image']) ?>" class="mt-3 h-56 w-full rounded-2xl object-cover cursor-zoom-in" onclick="openLightbox(this.src, 'Post image')">
+                                <?php endif; ?>
+
+                                <?php
+                                $savedImgStmt = $conn->prepare("SELECT image FROM post_images WHERE post_id = ?");
+                                $savedImgStmt->bind_param("i", $saved['id']);
+                                $savedImgStmt->execute();
+                                $savedImages = $savedImgStmt->get_result();
+                                ?>
+                                <?php if ($savedImages->num_rows > 0): ?>
+                                    <div class="mt-3 grid grid-cols-2 gap-2">
+                                        <?php while ($savedImg = $savedImages->fetch_assoc()): ?>
+                                            <img src="<?= e($savedImg['image']) ?>" class="h-48 w-full rounded-2xl object-cover cursor-zoom-in" onclick="openLightbox(this.src, 'Post image')">
+                                        <?php endwhile; ?>
+                                    </div>
+                                <?php endif; ?>
+
+                                <div class="mt-4 flex items-center gap-4 text-sm text-slate-500">
+                                    <a href="feed.php#post-<?= $saved['id'] ?>" class="text-cyan-600 font-semibold">View Post</a>
+                                </div>
+                            </div>
+                        <?php endwhile; ?>
+                    </div>
+
+                    <?php if ($savedTotal > 0): ?>
+                        <div class="mt-4 flex flex-col items-center gap-2">
+                            <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                                <span>Showing <strong class="text-slate-700"><?= $savedOffset + 1 ?>&ndash;<?= min($savedOffset + $savedLimit, $savedTotal) ?></strong> of <strong class="text-slate-700"><?= $savedTotal ?></strong></span>
+                            </div>
+                            <div class="pagination">
+                                <?php $savedQs = 'saved_page='; ?>
+                                <?php if ($savedPage > 1): ?>
+                                    <a href="?<?= $savedQs . ($savedPage - 1) ?>#saved"><i class="fa-solid fa-chevron-left text-xs"></i> Previous</a>
+                                <?php else: ?>
+                                    <span class="disabled"><i class="fa-solid fa-chevron-left text-xs"></i> Previous</span>
+                                <?php endif; ?>
+                                <?php $savedStart = max(1, $savedPage - 2); $savedEnd = min($savedTotalPages, $savedPage + 2); ?>
+                                <?php for ($i = $savedStart; $i <= $savedEnd; $i++): ?>
+                                    <a href="?saved_page=<?= $i ?>#saved" class="<?= $savedPage == $i ? 'active' : '' ?>"><?= $i ?></a>
+                                <?php endfor; ?>
+                                <?php if ($savedPage < $savedTotalPages): ?>
+                                    <a href="?saved_page=<?= $savedPage + 1 ?>#saved">Next <i class="fa-solid fa-chevron-right text-xs"></i></a>
+                                <?php else: ?>
+                                    <span class="disabled">Next <i class="fa-solid fa-chevron-right text-xs"></i></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </div>
+        </section>
 
     </main>
 
@@ -749,7 +899,19 @@ class="mt-5 flex items-center justify-between border-t pt-4">
                     "text-cyan-700"
                 );
 
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, '', '#' + tabName);
+            }
+
         }
+
+        window.addEventListener('DOMContentLoaded', function () {
+            var initialTab = (window.location.hash || '#personal').replace('#', '');
+            if (!document.getElementById(initialTab)) {
+                initialTab = 'personal';
+            }
+            showTab(initialTab);
+        });
 
     </script>
 

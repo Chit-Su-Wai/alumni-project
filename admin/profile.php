@@ -186,10 +186,13 @@ $profileImage = !empty($user['profile_image']) ? $user['profile_image'] : '../im
         <?php include "../include/admin_header.php"; ?>
 
         <main class="flex-1 min-w-0 p-6">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                <div>
-                    <h1 class="text-3xl font-bold text-teal-700">Admin Profile</h1>
-                    <p class="mt-1 text-sm text-slate-500">Update your account information</p>
+            <div class="admin-page-head">
+                <div class="title-wrap">
+                    <div class="admin-title-icon"><i class="fa-solid fa-user-gear"></i></div>
+                    <div>
+                        <h1 class="admin-page-title">Admin Profile</h1>
+                        <p class="admin-page-sub">Update your account information</p>
+                    </div>
                 </div>
             </div>
 
@@ -207,86 +210,92 @@ $profileImage = !empty($user['profile_image']) ? $user['profile_image'] : '../im
 
             <form method="POST" enctype="multipart/form-data" class="space-y-6">
                 <div class="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-                    <section class="bg-white rounded-3xl shadow-sm border border-cyan-50 p-6">
-                        <div class="flex flex-col items-center text-center">
-                            <img id="profilePreview" src="<?= e($profileImage) ?>" class="h-28 w-28 rounded-full object-cover border-4 border-cyan-100 shadow-sm">
-                            <div class="mt-4">
-                                <h2 class="text-xl font-bold text-slate-800"><?= e($user['name']) ?></h2>
-                                <p class="text-sm text-slate-500 mt-1"><?= e($user['email']) ?></p>
-                            </div>
+                    <section class="admin-card">
+                        <div class="admin-card-head">
+                            <div class="admin-card-title"><i class="fa-solid fa-user fa-icon-chip"></i> <span>Account</span></div>
                         </div>
-
-                        <div class="mt-6">
-                            <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Profile Image</label>
-                            <input type="file" name="profile_image" id="profileImageInput" accept="image/*"
-                                class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300">
-                        </div>
-
-                        <div class="mt-6 rounded-2xl bg-cyan-50 p-4 text-sm text-slate-600">
-                            <div class="flex items-center gap-2 font-semibold text-slate-700">
-                                <i class="fa-solid fa-circle-info text-teal-600"></i>
-                                Account
+                        <div class="p-5">
+                            <div class="flex flex-col items-center text-center">
+                                <img id="profilePreview" src="<?= e($profileImage) ?>" class="h-28 w-28 rounded-full object-cover border-4 border-cyan-100 shadow-sm cursor-zoom-in admin-avatar"
+                                    onclick="openLightbox(this.src, '<?= e($user['name']) ?>')">
+                                <div class="mt-4">
+                                    <h2 class="text-xl font-bold text-slate-800"><?= e($user['name']) ?></h2>
+                                    <p class="text-sm text-slate-500 mt-1"><?= e($user['email']) ?></p>
+                                </div>
                             </div>
-                            <p class="mt-2">Use this page to update your own administrator profile details.</p>
+
+                            <div class="mt-6">
+                                <label class="ui-label">Profile Image</label>
+                                <input type="file" name="profile_image" id="profileImageInput" accept="image/*"
+                                    class="input-base">
+                            </div>
+
+                            <div class="mt-6 rounded-2xl bg-cyan-50 p-4 text-sm text-slate-600">
+                                <div class="flex items-center gap-2 font-semibold text-slate-700">
+                                    <i class="fa-solid fa-circle-info text-teal-600"></i>
+                                    Account
+                                </div>
+                                <p class="mt-2">Use this page to update your own administrator profile details.</p>
+                            </div>
                         </div>
                     </section>
 
                     <div class="space-y-6">
-                        <section class="bg-white rounded-3xl shadow-sm border border-cyan-50 p-6">
-                            <h2 class="text-lg font-bold text-slate-800 mb-5">Personal Information</h2>
+                        <section class="admin-form-card">
+                            <h3 class="form-section-title"><i class="fa-solid fa-id-card"></i> Personal Information</h3>
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div>
-                                    <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Full Name</label>
+                                    <label                                 class="ui-label">Full Name</label>
                                     <input type="text" name="name" value="<?= e($user['name']) ?>" required
-                                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300">
+                                        class="w-full input-base">
                                 </div>
                                 <div>
-                                    <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Email</label>
+                                    <label                                 class="ui-label">Email</label>
                                     <input type="email" name="email" value="<?= e($user['email']) ?>" required
-                                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300">
+                                        class="w-full input-base">
                                 </div>
                                 <div class="md:col-span-2">
-                                    <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Bio</label>
+                                    <label                                 class="ui-label">Bio</label>
                                     <textarea name="bio" rows="4"
-                                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300"><?= e($user['bio'] ?? '') ?></textarea>
+                                        class="w-full input-base"><?= e($user['bio'] ?? '') ?></textarea>
                                 </div>
                                 <div>
-                                    <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</label>
+                                    <label                                 class="ui-label">Phone</label>
                                     <input type="text" name="phone" value="<?= e($user['phone'] ?? '') ?>"
-                                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300">
+                                        class="w-full input-base">
                                 </div>
                                 <div>
-                                    <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Address</label>
+                                    <label                                 class="ui-label">Address</label>
                                     <input type="text" name="address" value="<?= e($user['address'] ?? '') ?>"
-                                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300">
+                                        class="w-full input-base">
                                 </div>
                             </div>
                         </section>
 
-                        <section class="bg-white rounded-3xl shadow-sm border border-cyan-50 p-6">
-                            <h2 class="text-lg font-bold text-slate-800 mb-5">Change Password</h2>
+                        <section class="admin-form-card">
+                            <h3 class="form-section-title"><i class="fa-solid fa-lock"></i> Change Password</h3>
                             <div class="grid gap-4 md:grid-cols-3">
                                 <div>
-                                    <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Current Password</label>
+                                    <label                                 class="ui-label">Current Password</label>
                                     <input type="password" name="current_password"
-                                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300">
+                                        class="w-full input-base">
                                 </div>
                                 <div>
-                                    <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">New Password</label>
+                                    <label                                 class="ui-label">New Password</label>
                                     <input type="password" name="new_password"
-                                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300">
+                                        class="w-full input-base">
                                 </div>
                                 <div>
-                                    <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Confirm Password</label>
+                                    <label                                 class="ui-label">Confirm Password</label>
                                     <input type="password" name="confirm_password"
-                                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300">
+                                        class="w-full input-base">
                                 </div>
                             </div>
                         </section>
 
                         <div class="flex justify-end">
                             <button type="submit"
-                                class="rounded-xl bg-teal-600 px-6 py-3 text-sm font-bold text-white hover:bg-teal-700 transition shadow-sm">
+                                class="btn btn-primary">
                                 <i class="fa-solid fa-floppy-disk mr-1"></i> Save Profile
                             </button>
                         </div>

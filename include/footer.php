@@ -1,7 +1,7 @@
 <!-- Footer -->
 <footer class="px-4">
     <div
-        class="mx-auto max-w-7xl rounded-2xl border border-cyan-100 bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 px-6 py-4 shadow-sm">
+        class="mx-auto max-w-6xl rounded-2xl border border-cyan-100 bg-gradient-to-r from-cyan-50 via-cyan-100 to-teal-100 px-6 py-4 shadow-sm">
         <div class="flex flex-col items-center justify-between gap-3 text-center text-sm text-slate-700 md:flex-row">
             <div class="font-semibold">
                 &copy; <?= date('Y') ?> <span data-t="alumni_network">Alumni Network</span>
@@ -23,4 +23,5 @@
 <script src="../include/translations.js"></script>
 
 <link rel="stylesheet" href="../include/theme.css">
+<?php include __DIR__ . '/ui_components.php'; ?>
 <script src="../include/theme.js"></script>
